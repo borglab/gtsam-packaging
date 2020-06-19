@@ -16,8 +16,9 @@ branch from there
 
     git clone https://github.com/borglab/gtsam-packaging.git
 	cd gtsam-packaging
-    git remote add upstream https://github.com/borglab/gtsam.git
-	git fetch upstream develop
+	upstream=https://github.com/borglab/gtsam.git
+    git remote add upstream $upstream
+
 
 ## About GPG keys
 
@@ -53,8 +54,8 @@ The gtsam-packaging repo has these branches:
   is produced (e.g. ``gtsam_4.0.2.orig.tar.gz``) and stored in this
   branch.
 
-- ubuntu/{xenial,bionic,focal}: these branches mirror the
-  "develop" branch, but have additionally the packaging files in the
+- ubuntu/release: this branche mirrors the
+  "develop" branch, but also has the packaging files in the
   "debian" subdirectory, and any changes to the original source
   code necessary for packaging. Ideally there should be no changes
   necessary to the gtsam source files. Any such changes must be
@@ -74,17 +75,17 @@ that has the commits up to tag 4.0.2.
 
 ### Creating a release for the first time
 
-    git checkout -b ${vendor}/${distro} $version
+    git checkout -b ${vendor}/release $version
 
 Now hack away on that branch, make any changes that you have to, both
 to the "debian" directory and the sources itself (e.g. CMakeFiles etc).
 
 When done, update the changelog:
 
-    gbp dch --debian-branch=${vendor}/${distro} --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
+    gbp dch --debian-branch=${vendor}/release --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
 
 At this point git commit all changes to the source files (not the
-debian directory) to the $vendor/$distro branch. Then commit the
+debian directory) to the $vendor/release branch. Then commit the
 changes to the debian files as well, in a separate commit.
 
 If you have made any changes to the sources (except in the debian
@@ -92,7 +93,7 @@ directory), the following attempt to build a source package  will
 fail. But it will succeed in creating a pristine tar ball, from which
 you can generate a patch file.
 
-    gbp buildpackage -k${gpg_key} -S -sa --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/${distro}
+    gbp buildpackage -k${gpg_key} -S -sa --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/release
 
 
 To generate the patches (adjust name of patch file to your needs:
@@ -108,10 +109,22 @@ This generates the patch file. Commit it and restore your repo to good state:
 This time the build should succeed, because now the difference between
 pristine tarball and sources is captured in the patch file:
 
-    gbp buildpackage -k${gpg_key} -S -sa --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/${distro}
+    gbp buildpackage -k${gpg_key} -S -sa --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/release
 
 This should leave you with a bunch of files in the directory *above*
-the source directory.
+the source directory. These can now be uploaded into your ppa (see below).
+
+
+## Creating releases for other repos
+
+Once you have a GTSAM release created for one Ubuntu release
+(e.g. xenial), it's easy to create another one. You need to leave the
+original tar ball in place from the previous packaging steps.
+
+    distro=bionic
+    gbp dch --debian-branch=${vendor}/release --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
+    gbp buildpackage -k${gpg_key} -S --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/release
+
 
 ## Upload to Ubuntu PPA
 
