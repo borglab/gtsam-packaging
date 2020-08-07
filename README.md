@@ -54,7 +54,7 @@ The gtsam-packaging repo has these branches:
   is produced (e.g. ``gtsam_4.0.2.orig.tar.gz``) and stored in this
   branch.
 
-- ubuntu/release: this branche mirrors the
+- ubuntu/release: this branch mirrors the
   "develop" branch, but also has the packaging files in the
   "debian" subdirectory, and any changes to the original source
   code necessary for packaging. Ideally there should be no changes
@@ -63,12 +63,11 @@ The gtsam-packaging repo has these branches:
 
 ## Creating a release
 
-Create the branch with the right tag. This will create a new branch
-that has the commits up to tag 4.0.2.
+First have a look at the tags that have been created in the gtsam repo:
 
     git fetch upstream --tags
 
-Now find the latest release tag, e.g. "4.0.3":
+Now find the latest release tag, e.g. "4.0.3", and set a variable for it:
 
     version=4.0.3
     vendor=ubuntu
