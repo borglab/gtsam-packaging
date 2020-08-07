@@ -15,8 +15,8 @@ Get this repo, make gtsam the upstream repo, and fetch the "develop"
 branch from there
 
     git clone https://github.com/borglab/gtsam-packaging.git
-	cd gtsam-packaging
-	upstream=https://github.com/borglab/gtsam.git
+    cd gtsam-packaging
+    upstream=https://github.com/borglab/gtsam.git
     git remote add upstream $upstream
 
 
@@ -66,19 +66,41 @@ The gtsam-packaging repo has these branches:
 Create the branch with the right tag. This will create a new branch
 that has the commits up to tag 4.0.2.
 
-    version=4.0.2
+    git fetch upstream --tags
+
+Now find the latest release tag, e.g. "4.0.3":
+
+    version=4.0.3
     vendor=ubuntu
     distro=xenial
 
-    git fetch upstream --tags
+### Creating a release from scratch (this is uncommon!)
 
-
-### Creating a release for the first time
+You usually always have a ``${vendor}/release`` packaging branch in
+the ``origin`` repo, but in case you don't have that, you need to make
+a new branch and create the packaging directory (e.g. ``debian``) from
+scratch:
 
     git checkout -b ${vendor}/release $version
 
-Now hack away on that branch, make any changes that you have to, both
-to the "debian" directory and the sources itself (e.g. CMakeFiles etc).
+Then follow the instructions for preparing the package build.
+
+### Updating the packaging branch
+
+Next, update the packaging branch to capture all the changes in the
+development branch:
+
+    git merge upstream/develop $version
+
+Resolve any conflicts, then for good measure, again:
+
+    git merge upstream/develop $version
+
+### Preparing the package build
+
+Now hack away on the ``${vendor}/release`` branch, make any changes
+that you have to, both to the "debian" directory and the sources
+itself (e.g. CMakeFiles etc).
 
 When done, update the changelog:
 
