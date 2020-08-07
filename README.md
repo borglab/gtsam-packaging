@@ -11,13 +11,14 @@ Install some packages needed for building the package:
 
     sudo apt install git-buildpackage pristine-tar
 
-Get this repo, make gtsam the upstream repo, and fetch the "develop"
-branch from there
+*Fork* this repo on github, make gtsam the upstream repo, and fetch
+the "develop" branch from there
 
-    git clone https://github.com/borglab/gtsam-packaging.git
+    git clone https://github.com/YOUR_GITHUB_NAME/gtsam-packaging.git
     cd gtsam-packaging
     upstream=https://github.com/borglab/gtsam.git
     git remote add upstream $upstream
+	git fetch upstream develop
 
 
 ## About GPG keys
@@ -99,11 +100,19 @@ Resolve any conflicts, then for good measure, again:
 
 Now hack away on the ``${vendor}/release`` branch, make any changes
 that you have to, both to the "debian" directory and the sources
-itself (e.g. CMakeFiles etc).
+itself (e.g. CMakeFiles etc). Ubuntu packages are uploaded in *source*
+form to the PPA server, and get built there on Canonical's server
+farm. To test locally if stuff builds, do this:
 
-When done, update the changelog:
+    cd gtsam-packaging
+    debuild -b -us -uc
 
-    gbp dch --debian-branch=${vendor}/release --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
+This will build the package, but also generate a lot of temporary
+files in the debian directory which you need to remove again.
+
+When everything looks good, update the changelog:
+
+    gbp dch --debian-branch=${vendor}/release --release --upstream-tag=refs/tags/'%(version)s' --distribution=${distro} --git-author
 
 At this point git commit all changes to the source files (not the
 debian directory) to the $vendor/release branch. Then commit the
