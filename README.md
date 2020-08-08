@@ -149,6 +149,9 @@ the source directory. These can now be uploaded into your ppa (see below).
 Once you have a GTSAM release created for one Ubuntu release
 (e.g. xenial), it's easy to create another one. You need to leave the
 original tar ball in place from the previous packaging steps.
+When you update the changelog and are prompted for a release update,
+make sure you update the ubuntu version every time you bump the
+release, i.e. -1ubuntu2, -1ubuntu3 etc.
 
     distro=bionic
     gbp dch --debian-branch=${vendor}/release --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
