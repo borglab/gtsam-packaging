@@ -92,9 +92,8 @@ development branch:
 
     git merge upstream/develop $version
 
-Resolve any conflicts, then for good measure, again:
+Resolve any conflicts and commit the changes
 
-    git merge upstream/develop $version
 
 ### Preparing the package build
 
