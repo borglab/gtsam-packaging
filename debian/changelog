@@ -1,0 +1,1619 @@
+gtsam (4.0.3-1ubuntu2) xenial; urgency=medium
+
+  [ Frank Dellaert ]
+  * Added a number of docker images
+
+  [ Fan Jiang ]
+  * Add pybind11
+
+  [ Thomas Jespersen ]
+  * Added ported C++ version of ISAM2 Kitti example
+
+  [ kvmanohar22 ]
+  * adding functionality to use ISAM2 for imu preintegration example
+
+  [ yetongumich ]
+  * remove distance in noisemodel, replace with error
+  * add test on robust loss functions to behave like quadratic
+  * Revert "add implementation for deprecated Mahalanobis"
+  * merge with mahalanobis renaming
+  * re-add implemntation for deprecated Mahalanobis
+  * renamed mahalanobisDistance
+  * add document for robust noise model
+  * noise in robust should be gaussian, change variable names
+  * revised comments
+  * change test cases to use the updated names, remove 2nd Create in robust
+  * modified document, remove commented function, add deprecated distance
+  * check if noisemodel is gaussian, if not throw exception
+  * change unweightedwhiten back
+  * rename residual to loss
+  * modified document
+
+  [ Frank dellaert ]
+  * Inlined derivatives and fixed one issue with Jacobians around image center
+  * Re-ordered  and cleaned up tests, added derivative tests for image center
+
+  [ Frank Dellaert ]
+  * Setup and simulateMeasurements
+  * Built TranslationFactor class and partially completed TranslationRecovery class
+  * Added initalizeRandomly
+  * Running optimization
+  * Moved TranslationFactor prototype into sfm directory
+  * unit test, incl Jacobians
+  * Optimization works!
+  * copyright 2020
+  * Move to its own compilation unit
+
+  [ Binit Shah ]
+  * Include corrupting noise param to parse3DFactors
+
+  [ Jose Luis Blanco-Claraco ]
+  * more precise use of setZero() and add comments
+
+  [ Binit Shah ]
+  * Sampler initialized with noise argument
+  * Using optional sampler outside loop
+
+  [ Varun Agrawal ]
+  * Added FunctorizedFactor and corresponding tests
+  * fixes, better tests, docs
+  * remove TODO
+  * improved documentation
+
+  [ Martin Vonheim Larsen ]
+  * Added test for Unit3::operator=
+  * Properly handle basis in Unit3::operator=
+
+  [ Varun Agrawal ]
+  * removed dependency on Eigen3 since we provide Eigen 3.3.7 and Ubuntu Bionic provides Eigen 3.3.4.
+
+  [ Martin V. Larsen ]
+  * Update testUnit3.cpp
+
+  [ Varun Agrawal ]
+  * improve and modernize the Dockerfiles
+  * small logistical fixes
+
+  [ Gerry Chen ]
+  * put file stream inside scope to force buffer flush This was already fixed for serializeXML but not for serializeToXMLFile or deserializeFromXMLFile.
+  * bypass assert_equal tests for file roundtrips
+  * better comments on serializationTestHelper functions
+
+  [ Jose Luis Blanco-Claraco ]
+  * unhide doc section in PDF
+
+  [ Varun Agrawal ]
+  * remove extra semicolon
+
+  [ Frank dellaert ]
+  * Fixed override warnings and added a few missing headers
+
+  [ Varun Agrawal ]
+  * renamed testScenarios to testScenarioRunner
+  * set CMAKE_VERBOSE_MAKEFILE flag to OFF
+
+  [ Jose Luis Blanco-Claraco ]
+  * Finish undo of #310 fill with zeros (not actually needed)
+
+  [ David ]
+  * Add Pose3-Point3 factor
+  * Update incorrect test name
+  * Add more documentation and clang-format
+
+  [ Frank Dellaert ]
+  * Importing Frobenius error factors from Shonan effort
+
+  [ Fan Jiang ]
+  * Fix UAF
+  * Fixed all alignment problems
+  * Add missing include
+  * Fix wrap tests
+  * Address Frank's comments
+  * Move away from boost
+
+  [ Varun Agrawal ]
+  * export cython install path so it can be picked up by other cmake projects
+  * cmake function to install python package once make install is completed
+
+  [ Gerry Chen ]
+  * use boost paths append to have platform agnostic path separators
+
+  [ Varun Agrawal ]
+  * add new make command for installing python wrapper
+
+  [ Gerry Chen ]
+  * Separate stream creation and serialization Recommended by @ProfFan in #343 with the objective of making (de)serialize to string and to file more similar
+  * formatting to Google style
+
+  [ Varun Agrawal ]
+  * added comments and removed unnecessary code
+
+  [ Gerry Chen ]
+  * fixed unit test failure on `testSerializationBase` object `output` was getting reused, but should be re-loaded into a "blank" object each time.
+  * reset filesystem - forgot to uncomment these after debugging
+
+  [ akrishnan86 ]
+  * optional initialization for LMParams
+
+  [ Varun Agrawal ]
+  * Set minimum supported numpy version to 1.11.0 (#366)
+
+  [ Fan Jiang ]
+  * Revise comments
+
+  [ Gerry Chen ]
+  * remove file roundtrip test for pointers
+
+  [ Varun Agrawal ]
+  * updated comments in shell script
+  * added Windows batch script to install python wrapped package
+
+  [ Fan Jiang ]
+  * Style fixes as commented by @dellaert
+
+  [ Gerry Chen ]
+  * serialization docstrings
+  * rename serialization functions with less ambiguous names According to Varun's suggestion. Note: string functions should be automatically inlined by compiler to avoid passing big strings.
+
+  [ Varun Agrawal ]
+  * pure CMake script to install Python wrapper after compiling
+  * removed extra line
+  * reset to previous version
+
+  [ Fan Jiang ]
+  * Add comments
+  * Switch to the new alignment marker type
+
+  [ Varun Agrawal ]
+  * Load Cython requirements file instead of reading it in cmake
+  * Added cmake variable GTSAM_CYTHON_INSTALL_FULLPATH to include build tag directly
+  * Vastly improved setup.py template
+  * Specify working directory from where to call setup.py
+  * print Eigen Unsupported status message correctly
+  * wrap the biasHat function for PreintegratedMeasurement
+  * added .gitignore for when building the sample cmake projects
+
+  [ Fan Jiang ]
+  * Add missing lf
+
+  [ akrishnan86 ]
+  * fix SfmData naming
+
+  [ Varun Agrawal ]
+  * Revert "added .gitignore for when building the sample cmake projects"
+
+  [ akrishnan86 ]
+  * review1 changes
+
+  [ Varun Agrawal ]
+  * make python-install command depends on gtsam target
+  * cleaner version of execution script which only needs 'make install'
+  * run setup.py after installing the gtsam_eigency module
+  * capture stdout in python test [only for python3]
+  * newline added to end of CMake file
+  * Set high level Cython/Eigency variables to reduce duplication
+  * Create and use cython build directory
+  * Use the high level cython variables, improve install process
+  * Remove redundant postfix checking since the postfix is already added at the top level
+  * updated cython wrapper README
+  * In-place cython build
+  * fixed CYTHON_INSTALL_PATH cmake variable wrt cache
+  * Python Wrapper CMake update
+  * removed unneeded install commands and updated README
+  * Add python-install dependency for gtsam_unstable as well
+  * make utils and test code python2 compliant
+  * update python build location in travis script
+
+  [ Fan Jiang ]
+  * Fix memory leak in Expressions
+  * Fix TranslationFactor with Vector3 as Point3
+  * Fix MSVC build
+
+  [ Varun Agrawal ]
+  * Improved paths and added checks
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix missing DLL exported symbol
+
+  [ Varun Agrawal ]
+  * new definition for FunctorizedFactor to allow for using std::function and lambdas
+  * Simplified FunctorizedFactor
+
+  [ Fan Jiang ]
+  * Fix FrobeniusWormholeFactor Python test
+
+  [ Varun Agrawal ]
+  * fix working directory for python install target
+  * test SmartFactor when body_P_sensor is passed in
+
+  [ Thomas Jespersen ]
+  * ISAM2 Kitti example: Addressed review comments
+
+  [ Mike Sheffler ]
+  * Second attempt at a wrapper fix.
+
+  [ Varun Agrawal ]
+  * Abstracted out serialization code for PreintegrationBase
+
+  [ Mike Sheffler ]
+  * Unnecessary include statement
+
+  [ Varun Agrawal ]
+  * Updated  PreintegratedImuMeasurements docstring
+
+  [ Fan Jiang ]
+  * Fix lambda check in logging optimizer
+
+  [ Varun Agrawal ]
+  * Replace scoped name with direct name and instantiate base class in constructor
+  * Major updates to CombinedImuFactor to make it Testable as well as serializable
+  * Fix typo
+  * Added and updated serialization tests to include all IMU factors
+  * revert variable change
+  * reduced tolerance for checking jacobian
+
+  [ Fan Jiang ]
+  * add return value in gtsam_optimize
+
+  [ Frank dellaert ]
+  * Eliminated some copy/paste
+  * Added g2o test files
+  * Added tests on determinants of read rotations
+  * Normalized quaternions before converting to Rot3 to account for limited precision in text files.
+  * Avoided extra conversions to quaternions
+
+  [ Varun Agrawal ]
+  * Add indentation
+  * Handle extrinsics and intrinsics for jacobian
+
+  [ Frank dellaert ]
+  * Formatted and fixed discrete examples
+
+  [ Varun Agrawal ]
+  * Use built in Matrix serialization
+  * Generic Eigen::Matrix serialization for boost
+  * add compiler flags to suppress warnings if built in release mode
+  * Add MATLAB root and Mex paths to cmake output, align GTSAM specific output
+  * Quote variable so it works on Windows
+  * Use static matrix and constexpr
+  * use boost serialization macro instead of make_array
+
+  [ Fan Jiang ]
+  * Added wrapping for the PCG solver in Cython
+  * add comments
+
+  [ Varun Agrawal ]
+  * suppress warnings only for 3rd party code for Release builds
+  * fix init issues with Vector3, use static matrices where possible
+  * added note about code source and eigen resize for both static and dynamic matrices
+  * Explicit type definition to handle warning
+
+  [ Fan Jiang ]
+  * Add check to ensure we are calling lambda on a LM
+
+  [ Varun Agrawal ]
+  * correct compiler flag for Windows
+
+  [ Fan Jiang ]
+  * Add unit test
+  * use isinstance
+
+  [ Varun Agrawal ]
+  * added cmake policy for AppleClang compiler identification
+
+  [ Fan Jiang ]
+  * Move the declaration to cpp
+
+  [ Varun Agrawal ]
+  * Better way of exporting Boost serialization guid
+
+  [ Frank dellaert ]
+  * Resurrecting DiscreteBayesTree tests
+
+  [ yetongumich ]
+  * modified test
+
+  [ Frank dellaert ]
+  * Checked in pdf for easy reference
+  * added printSignature and evaluate
+  * Fixed link issue
+  * Cleaned up formatting
+  * Fixed tests
+
+  [ Varun Agrawal ]
+  * perform equality comparison on root of class hierarchy
+  * correct vector init
+  * delete extra pdf file
+  * Revert "delete extra pdf file"
+
+  [ yetongumich ]
+  * deprecate error in noisemodel, use loss instead; revise virtual with override
+  * deprecate error in noisemodel, use loss instead; revise virtual with override
+
+  [ Frank dellaert ]
+  * Extra tests on frontal keys
+  * Some more refactoring of marginals
+  * Fix confusion between parents and frontals
+  * Added code to re-jigger Signature cpt so that frontal keys are always first, consistent with how the DiscreteElimination function works.
+  * New discrete example
+  * Better print
+  * Cleaned up tests
+  * Use dict notation in print
+  * Add explicit HMM example
+  * Modernized sample function
+
+  [ yetongumich ]
+  * modify testNoiseModel to use loss instead of error
+  * change doc
+
+  [ Varun Agrawal ]
+  * fix serialization warning for boost::optional<Vector3>
+
+  [ Frank dellaert ]
+  * Partial Specialization
+  * Add BayesNet-inst.h at end of BayesNet.h
+
+  [ Varun Agrawal ]
+  * correct indentation for Python version
+
+  [ Mike Sheffler ]
+  * Missing BOOST_SERIALIZATION_NVP wrapper macro for an argument to be serialized
+
+  [ Jose Luis Blanco Claraco ]
+  * docker tag and pip3 fixes; add a readme
+  * complete README
+
+  [ acxz ]
+  * set default initialization
+
+  [ Frank dellaert ]
+  * Fixed conventions for Jacobians
+  * Unit test for transformPoseFrom
+  * Some more name changes and documentation
+
+  [ Varun Agrawal ]
+  * Added more comments for clearer understanding
+
+  [ Fan Jiang ]
+  * Bump version and switch Pose3 expmap default
+  * Fix test for full Pose3 expmap
+  * Remove pybind11
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sat, 08 Aug 2020 10:02:21 -0400
+
+gtsam (4.0.3-1ubuntu1) xenial; urgency=medium
+
+  [ Frank Dellaert ]
+  * Added a number of docker images
+
+  [ Martin Brossard ]
+  * Create pose3Localizationexample.txt
+  * Create Pose3Localization.cpp
+
+  [ Varun Agrawal ]
+  * wrapped more mEstimators as well as their weight functions
+  * added script to visualize values of different mEstimators
+  * different plots for each mEstimator
+
+  [ dellaert ]
+  * Fixed comment
+
+  [ Varun Agrawal ]
+  * renamed global variables in smallExample.h and added optional noise model parameters
+  * improve m-estimator visualization code
+  * fixed function declarations which use globally declared noise models
+
+  [ Frank Dellaert ]
+  * Added several methods
+  * Added SO(4) class
+  * Added variable dimension SO(n) class
+  * Added factor for Karcher mean constraint: fixes the geodesic mean to impose a global gauge constraint.
+  * Wrapped SO(3), SO(4) and new factor, and added SO(4) tests in python
+  * Closest
+  * Added python test for Karcher mean
+  * Fixed issues with Closest and << in SOn.h
+  * Made constructor explicit, expose SOn in wrapper
+  * Derive from SOnBase
+  * SO3 and SO4 both Lie groups.
+  * Made matrix a member variable
+  * Add pointer constructor for dynamic case
+  * Allow dynamic dimension Lie groups
+  * Succeeded in making SOn a Lie group
+  * Hat/Vee etc, working Random for SOn
+  * Expmap and vec, specialized to SO3 and SO4
+  * Moved code into appropriate headers (SOt instead of SO3 for now)
+  * Distributed SOn functionality over three files
+  * Rescued some specializations for SO3
+  * Moved all tests to their own test files
+  * Moved things to inl
+  * All tests for SO3 now uncommented
+  * Specialized Hat/Vee
+  * Hat and Vee for SO4
+  * Hat and Vee for SO3
+  * Three more constructors for SO3
+  * Serialization
+  * Full enchilada: SO3 is now SO<3>
+  * More asserts/tests
+  * Python tests
+  * Updated timing script
+  * Fixed issue with quaternions and added "special" travis stage that checks quaternions path.
+  * Cleaned up some unused headers
+  * Made sure GTSAM_USE_QUATERNIONS flag is set and used
+  * Worked around build snafu on Travis with enable_if_t (not in all boost versions, and only in std as of c++14)
+  * Fixed test
+  * Fixed issue with static vector being const
+  * Another attempt at getting past Linux compiler
+
+  [ Varun Agrawal ]
+  * implemented residual functions for common M-estimators and added corresponding tests
+
+  [ Ellon Paiva Mendes ]
+  * Install GTSAMConfigVersion.cmake
+
+  [ Jose Luis Blanco-Claraco ]
+  * Remove obsolete cmake FindXX modules.
+  * Revert "Fix cmake handling newer boost versions (Closes: #442)"
+  * Import FindBoost from CMake v3.15.4
+  * Patches to use CMake's FindBoost into gtsam
+  * Ubuntu PPA packages: use GTSAM_BUILD_WITH_MARCH_NATIVE=OFF
+  * get gtsam version number in synch
+
+  [ Varun Agrawal ]
+  * label subplots for each estimator and hyphenate Geman-McClure
+  * Robust Estimator Updates
+  * removed const declarator from  and  functions, implemented DCS residual
+  * added DCS residual tests
+  * wrap DCS and L2WithDeadZone estimators
+  * added override keyword to derived versions of  and  for mEstimators
+  * formatting; removed virtual from derived classes; added default values for L2WithDeadZone constructor to allow serialization
+  * add residual function for Fair mEstimator wrapper
+  * cleaned up Matlab script for visualizing mEstimators
+
+  [ Gerry Chen ]
+  * Gaussian Factor Graph unittests and linearization (with Python bindings)
+  * `optional<Ordering>` and `auto` modernization
+  * Change ordering back to OptionalOrdering typedef
+
+  [ Chris Beall ]
+  * Fix Metis ordering for empty graph and single node
+
+  [ Frank Dellaert ]
+  * Add override to resolve warnings on clang
+  * Replace deprecated `ptr_fun` with lambda expression
+
+  [ Peter Mullen ]
+  * fix compile error
+
+  [ Gerry Chen ]
+  * Some low hanging fruit changing `func(..., boost::optional<const Class &>)` to overloaded `func(...)` and `func(..., const Class &)` not all done Also, although it currently passes all tests, I think some more tests may be needed...
+
+  [ duyanwei ]
+  * fix default parameters in constructor of IncrementalFixedLagSmoother.h
+  * changed function name and made it static
+
+  [ Jean-Philippe Tardif ]
+  * Fix python wrappers for BetweenFactorVector and PreintegratedCombinedMeasurements and
+  * clean up commented code
+  * Move back code,, comments in the code
+
+  [ mxie32 ]
+  *         expose GPSFactor in python wrapper, and add example for it
+  *         upgrade colamd to suite-sparse-5.4.0
+
+  [ Gerry Chen ]
+  * convert all optional Ordering to function overloads compiles and passes tests, but some potentially code-breaking changes in: Marginals.h - order of arguments had to change since `factorization` has a default value EliminatableFactorGraph.h - marginalMultifrontalBayesNet and marginalMultifrontalBayesTree no longer accept `boost::none` as a placeholder to specify later arguments Notes: EliminateableFactorGraph.h - `orderingType` is no longer needed in function overloads that specify ordering, but I left it for the time being to avoid potential code breaking
+  * Caught some stragglers using boost::optional<Ordering>
+  * deprecated functions for backwards compatibility also removed some edits that were tangential to the PR.
+  * Update test cases for new preferred syntax
+
+  [ Mike Bosse ]
+  * Fix bug when constructing VariableSlots from a GaussianFactorGraph that has null factors.
+
+  [ Michael Bosse ]
+  * updates from code review
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix broken dependencies in Debian packages
+
+  [ Jose Luis Blanco Claraco ]
+  * Use gcc -fPIC flag when building gtsam libraries
+
+  [ Francesco Papi ]
+  * Move mEstimator into separate file
+  * Add functionalities to get introspection of the loss function weights and unweighted residuals for the NoiseModelFactor class
+
+  [ Gerry Chen ]
+  * Fix doxygen "Creating a new factor"
+
+  [ Michael Bosse ]
+  * missing iosteam header include
+
+  [ Fan Jiang ]
+  * Fix alignment on SO<n>
+
+  [ Lukas Solanka ]
+  * make include_directories relative for install interface
+
+  [ Erik Nelson ]
+  * Fix an infinite loop in GTSAM's nonlinear optimizer
+  * Add missing boost::shared_ptr include to Values.h
+  * Make attitude factor copy and move assignable
+  * Add unit tests
+  * Explicitly check for copy and move assignable
+
+  [ Ruffin ]
+  * Include build dependencies
+
+  [ Cong Li ]
+  * compute numerical derivative for 6-argument function and add test code for this, also fix bugs in computing numerical derivative in 5-argument function
+
+  [ Frank Dellaert ]
+  * Trigger travis
+
+  [ Michael Bosse ]
+  * Improve numerical precision of residual functions
+
+  [ Frank Dellaert ]
+  * Addressed Duy's comments
+
+  [ Jose Luis Blanco Claraco ]
+  * also update gtsam version in ROS package.xml
+
+  [ Fan Jiang ]
+  * Use aligned_allocator for static allocation
+
+  [ Varun Agrawal ]
+  * install GtsamPrinting.cmake as part of installation
+
+  [ Fan Jiang ]
+  * Workaround for upstream boost issue #119
+  * Refine workaround
+
+  [ chrisbeall ]
+  * Eigen alignment fix in ExpressionNode and RotateFactor
+
+  [ Fan Jiang ]
+  * Workaround for boost serialization bug for NULL shared_ptrs version < 1.66.0
+  * Fix KarcherMeanFactor
+  * Additional Fixes for Rot3
+
+  [ Jose Luis Blanco-Claraco ]
+  * travis: use clang-9
+
+  [ Peter Mullen ]
+  * add rotate Pose2 and Pose3 covariance tests
+
+  [ Fan Jiang ]
+  * Change to normal allocator
+
+  [ Peter Mullen ]
+  * a few comments
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix broken 64bit hash in tbb
+  * Fix MSVC link errors (missing DLLEXPORTs)
+
+  [ Peter Mullen ]
+  * Attempt to fix clang compile warnings and execution failures. Change function names. Add a few comments.
+  * Fix another compiler warning. Change function arguments to const ref
+  * Move shared code into a header file
+
+  [ Michael Bosse ]
+  * Fix LM linearizedCostChange for robust noise models
+
+  [ Mike Bosse ]
+  * make jacobian factor use noise model distance when available
+
+  [ Jose Luis Blanco-Claraco ]
+  * fix missing include
+
+  [ Varun Agrawal ]
+  * install gtsam_unstable correctly on APPLE devices
+
+  [ Peter Mullen ]
+  * Move TransformCovariance functor into lie.h
+
+  [ Varun Agrawal ]
+  * add top level path for installation on macOS devices
+
+  [ Peter Mullen ]
+  * Move TransformCovariance functor out of LieGroup class
+
+  [ Toni ]
+  * Remove ugly preprocessor directives, still hardcoded though
+
+  [ Toni Rosinol ]
+  * Add flag for CombinedImu
+
+  [ Varun Agrawal ]
+  * don't add CMAKE_INSTALL_NAME_DIR to cmake cache, allowing it to be updated by ccmake
+
+  [ Jose Luis Blanco Claraco ]
+  * More consistent (not) use of CMAKE_INSTALL_PREFIX.
+
+  [ Jose Luis Blanco-Claraco ]
+  * fix Key as size_t (Closes #182)
+
+  [ Fan Jiang ]
+  * Fix travis.sh
+  * Remove the override allowing boost::optional binding to rvalues
+
+  [ Jose Luis Blanco Claraco ]
+  * Add AppVeyor CI for MSVC
+
+  [ Jose Luis Blanco-Claraco ]
+  * MSVC build fixes
+  * fix missing DLLEXPORT
+  * Fix build errors in examples/tests
+  * Missing DLL EXPORT macros
+
+  [ Jose Luis Blanco Claraco ]
+  * Fix cmake policy CMP0054 warning
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix use of non-standard array of non-constant length
+  * Enable only a few unit tests for MSVC
+
+  [ Ayush Baid ]
+  * Fixing the test for merging two sets in the DSF
+
+  [ Peter Mullen ]
+  * make code match comments when creating Pose3 noiseModel instances
+
+  [ Fan Jiang ]
+  * Fix library find
+  * Fix error when packaging
+  * Allow static metis in shared lib
+  * Cleanup the cmake files
+  * Regression
+  * Regression
+  * Nuke the commented out check
+
+  [ acxz ]
+  * remove execution file mode
+  * change from deprecated tbb::mutex to std::mutex
+  * remove unnecessary tbb task_scheduler_init
+  * add TBB guards back for multithread option and potentially breaking changes
+  * remove deprecated tbb_exception in favor of std_exception
+  * remove tbb.h include and specify individual includes needed
+  * add tbb to travis-ci
+  * add deprecated task_scheduler_init until alternative is found
+
+  [ Gerry Chen ]
+  * add Information constructor to python wrapper for gaussian noise model
+  * python wrapper: access to gaussian conditional matrices
+
+  [ Jose Luis Blanco-Claraco ]
+  * Replace c++17 removed classes with c++11 replacements
+
+  [ Varun Agrawal ]
+  * retrieve Point3 from Unit3 in wrapper code
+
+  [ Michael Bosse ]
+  * Only compute old error when solved successfully
+
+  [ Fan Jiang ]
+  * Add pybind11
+
+  [ Varun Agrawal ]
+  * replace Cal3_S2 deprecated matrix() with K(), add Cal3DS2 support to triangulation
+  * support K() and matrix() for Cal3_S2
+  * better organize build badges, and fix links
+  * grammar fixes
+  * Cmake print status of Cheirality Exception flag
+
+  [ Fan Jiang ]
+  * Add two required string for version detection
+  * Add Cython CI
+  * Fix requirements for building
+  * Fixing install step
+  * Fix typo
+  * Add missing sudo
+  * Disable native flag
+  * Resume normal CI
+  * Build against Python 3
+  * Fix Linux build
+  * Include setuptools
+
+  [ dellaert ]
+  * Added override everywhere where it was needed
+
+  [ Varun Agrawal ]
+  * Separate matrix row values with commas
+  * use in-built stream support for translation vector rather than duplication of code
+  * replaced/appended all calls to SimpleCamera with PinholeCameraCal3_S2
+
+  [ Thomas Jespersen ]
+  * Corrected Bias key index in IMUKittiExampleGPS.m
+
+  [ Varun Agrawal ]
+  * added unit test for overloaded translation printing
+  * wrap Rot3 slerp function to allow for rotation interpolation
+
+  [ Frank Dellaert ]
+  * prototyping weighted sampler
+  * Moved WeightedSampler into its own header
+  * Random now uses std header <random>.
+  * Removed boost/random usage from linear and discrete directories
+  * Made into class
+  * Now using new WeightedSampler class
+  * Inlined random direction generation
+  * eradicated last vestiges of boost/random in gtsam_unstable
+  * Fix test with new random behavior
+  * Return base 0 indices
+
+  [ Fan Jiang ]
+  * Fix Parameter passing in Conjugate Gradient
+  * Add More Unit Tests for Robust Noise Models
+  * Removed commentted out and print-s
+  * Remove redundant params
+
+  [ Varun Agrawal ]
+  * wrap SfM_data struct
+  * added more function to retrieve SfM_data and wrapped them
+  * minor typo fixes
+  * added docstrings for SFM structs
+  * compute angle in degrees between 2 Rot3 matrices
+  * return axis-angle representation instead of just angle, updated test to be much simpler
+  * consistent naming scheme for SfM_Data
+  * follow Google style guide naming convention for Sfm related data structs
+  * moved deprecated aliases to bottom of dataset.h
+  * convert axisAngle to static ToAxisAngle, update tests
+  * improved floating point comparison for better numerical stability
+  * static function & method for axis-angle with improved tests and fix for sign ambiguity
+  * correct handling of NaNs and Infs, camelCase, and better namespace handling
+  * removed static ToAxisAngle function
+  * removed header bloat and added reference comment for fpEqual implementation
+  * wrapped simpleCamera function to get camera from projection matrix
+
+  [ Fan Jiang ]
+  * Add triggering for python build
+
+  [ Varun Agrawal ]
+  * moved references for implementation from header to cpp
+  * correct way of maintaining angle of axis-angle representation within (-pi,pi]
+  * added documentation to fpEqual on behavior for NaNs/Infs
+  * fix for angle outside the range (-pi,pi] and added more tests to verify
+
+  [ Thomas Jespersen ]
+  * Added ported C++ version of ISAM2 Kitti example
+
+  [ acxz ]
+  * add tbb version guard to fix clang build
+  * add deprecated task_scheduler_init unitl alternative is found
+
+  [ Varun Agrawal ]
+  * axisAngle maintains angle between [0, π] so updated docs and tests accordingly
+  * wrap AxisAngle constructor for rotations
+  * improved printing for Point3 and Unit3
+
+  [ Frank Dellaert ]
+  * Proper const
+  * More systematic tests
+
+  [ Varun Agrawal ]
+  * Lots of improvements to Rot3
+
+  [ Frank Dellaert ]
+  * Transitioned toa method to a functor
+
+  [ Varun Agrawal ]
+  * more efficient and explicit inverse()
+  * Revert "improved printing for Point3 and Unit3"
+  * set dimension of calibration classes with static const variable
+  * move print() and iostream to .cpp file for SO<N>
+  * deprecate PinholeCamera specific functions for triangulation
+  * simpler checks for infinity in NoiseModel
+  * faster computation of sigmas in NoiseModel
+  * updated transpose signature for Rot3Q
+
+  [ Frank Dellaert ]
+  * Refactor TOAFactor and test
+  * C++ example
+  * Python example and necessary wrapper gymnastics
+
+  [ Varun Agrawal ]
+  * improved rotation transpose with quaternions
+  * test in testAHRSFactor is already fixed
+  * test for stability of RQ due to atan2 as well as fix
+  * Revert "test for stability of RQ due to atan2 as well as fix"
+  * undo return type of Eigen::Transpose, and add back TODO to optimize RPY
+  * added const to matrix() function for Rot3 to be consistent with SOn and added note about using Eigen transpose expression
+  * remove const from return types for Rot3
+  * matplotlib function to set axes equal for 3D plots
+  * code to plot 3D covariance ellipsoid
+  * function to plot trajectory
+  * modernized SFM example and added plotting of trajectory and landmarks
+  * added Cal3_S2 header and Frank's recommendations
+  * import python classes
+  * make exceptions as const reference
+  * Eigen alignment
+  * make exception as reference
+  * initialize PreintegrationParams default constructor and make serialization test more explicit
+  * suppress warning when wrapper indentation is too long
+  * suppress warning only on linux for now, need to figure out for other OSes
+
+  [ Frank Dellaert ]
+  * Style and dates
+
+  [ acxz ]
+  * add default value of GTSAM_WITH_TBB
+  * make GTSAM_WITH_TBB=OFF default in ci
+  * fix tbb CMakeLists indentation
+
+  [ Varun Agrawal ]
+  * function to add tbb with debug
+
+  [ acxz ]
+  * use the same tbb as xenial
+
+  [ Varun Agrawal ]
+  * improved install_tbb function
+  * specific paths for Mac, removed libtbb from travis packages list
+  * properly export variables
+  * use enum dimension for camera DoF
+  * undo sigma checks, and use explicit triangular view to perform inverse of R matrix
+  * save tbb download to /tmp
+  * install tbb before install to allow propagation of env variables
+  * update travis.yml to install tbb during install phase, source script to add variables to current shell
+  * vastly improved install_tbb function which copies files correctly
+  * make covariance() use fast triangular inverse and use that for sigmas
+  * set makefile to not verbose to speed up travis and reduce log length
+  * install tbb as part of configure
+  * output message for exception in debug mode
+  * make makefile verbose again
+  * removed graphWithPrior from all examples while keeping functionality the same
+
+  [ kvmanohar22 ]
+  * adding functionality to use ISAM2 for imu preintegration example
+
+  [ Fan Jiang ]
+  * Fix unittest when GTSAM_DEFINE_POINTS_AS_VECTORS is defined
+
+  [ yetongumich ]
+  * fix comments
+  * deprecated Mahalanobis, add better named functions
+  * add implementation for deprecated Mahalanobis
+
+  [ Varun Agrawal ]
+  * maintain backwards compatibility of CMake
+
+  [ yetongumich ]
+  * renamed residual to loss, follow PR #188
+  * remove distance in noisemodel, replace with error
+  * add test on robust loss functions to behave like quadratic
+  * Revert "add implementation for deprecated Mahalanobis"
+  * renamed squaredMahalanobisDistance
+  * renamed mahalanobisDistance
+  * Revert "add implementation for deprecated Mahalanobis"
+  * merge with mahalanobis renaming
+  * Revert "renamed residual to loss, follow PR #188"
+  * re-add implemntation for deprecated Mahalanobis
+  * re-add implemntation for deprecated Mahalanobis
+  * renamed mahalanobisDistance
+  * add document for robust noise model
+  * noise in robust should be gaussian, change variable names
+
+  [ Frank Dellaert ]
+  * Deprecated several methods and madrng mutable, so methods are const
+  * Comment typos
+  * Changed argument to obviate need for cast
+  * Deprecated parts of cpp
+  * Fixed issues with deprecated Sampler methods
+
+  [ kvmanohar22 ]
+  * fix typo
+
+  [ yetongumich ]
+  * revised comments
+  * change test cases to use the updated names, remove 2nd Create in robust
+  * modified document, remove commented function, add deprecated distance
+  * check if noisemodel is gaussian, if not throw exception
+  * change unweightedwhiten back
+  * rename residual to loss
+
+  [ Jose Luis Blanco Claraco ]
+  * Prefer C++11 nullptr
+
+  [ Glen Haggin ]
+  * Implemented fisheye camera calibration based on Cal3DS2
+  * Added example with fisheye camera using the SFM data
+  * Changed cacheing in jac func and fixed comments per PR discussion
+
+  [ Jose Luis Blanco Claraco ]
+  * printError(): allow custom factor filter
+
+  [ alescontrela ]
+  * Add addPrior method to NonlinearFactorGraph and corresponding unit test.
+  * Replace push_back with emplace_shared. Address PR feedback.
+  * Move PriorFactor.h to gtsam/nonlinear. Point slam/PriorFactor.h to new header location for backwards compatibility.
+  * Change PriorFactor includes from gtsam/slam to gtsam/nonlinear
+
+  [ Stephanie McCormick ]
+  * Fixed error in description for update().
+
+  [ alescontrela ]
+  * Change all old cases of graph.emplace_shared<PriorFactor<...>>(...) and graph.add(PriorFactor<...>(...)) to graph.addPrior<...>(...). Removed unnecessary PriorFactor.h includes.
+
+  [ acxz ]
+  * replace task_scheduler_init with task arena/group
+
+  [ alescontrela ]
+  * Replace addPrior<> with addPrior
+  * Remove any unnecessary PriorFactor.h includes
+  * Fix Pose2SLAMExample_g2o example
+  * Make small commit to re-trigger travis build.
+
+  [ acxz ]
+  * replace task_scheduler_init with task arena/group
+
+  [ yetongumich ]
+  * modified document
+
+  [ Glen Haggin ]
+  * Combine Cal3Fisheye and Cal3Fisheye_Base into one class
+  * Formatted testCal3DFIsheye.cpp
+  * Added test cases for fisheye calibration verified in OpenCv
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix running unit tests in Debian builds
+
+  [ Jose Luis Blanco Claraco ]
+  * relax test numerical thresholds to fix failures in some architectures
+  * remove useless file
+
+  [ akrishnan86 ]
+  * line3 compiled tested
+  * some changes after review 1
+  * minor change review 1
+
+  [ acxz ]
+  * change to more efficient call of threaded functions
+
+  [ Varun Agrawal ]
+  * better matrix printing without space wastage, fixed notation in comment
+
+  [ acxz ]
+  * fix uninitialized variable Key first_pose
+
+  [ Jose Luis Blanco-Claraco ]
+  * Ubuntu PPA packages: disco is obsolete. Add focal.
+
+  [ akrishnan86 ]
+  * API changes after review1
+
+  [ Varun Agrawal ]
+  * fixed pose3 test for new print format
+
+  [ akrishnan86 ]
+  * optionaljacobian initialization with eigen mat
+  * remove cstlib header inclusion
+  * removed concepts header
+  * documenting the point() function
+
+  [ acxz ]
+  * remove trailing whitespaces
+  * add path to find iomp5 mkl library
+  * fix sign-compare warning
+
+  [ akrishnan86 ]
+  * reformat to google style indents
+  * elegant jacobian computation
+  * removed extra blank space in testLine3
+
+  [ Varun Agrawal ]
+  * const reference and minor updates
+
+  [ Fan Jiang ]
+  * Fix test failure on latest Clang 10.0.0-1
+
+  [ akrishnan86 ]
+  * additional jacobian for retract and local and unit tests
+
+  [ Frank dellaert ]
+  * Reformatted and refactored
+  * Reformatted some and use of auto
+
+  [ acxz ]
+  * update timing to use internal timing.h api
+  * add wall time to reciprocate original timing
+
+  [ Frank dellaert ]
+  * Inlined derivatives and fixed one issue with Jacobians around image center
+  * Re-ordered  and cleaned up tests, added derivative tests for image center
+
+  [ Frank Dellaert ]
+  * Setup and simulateMeasurements
+  * Built TranslationFactor class and partially completed TranslationRecovery class
+  * Added initalizeRandomly
+  * Running optimization
+  * Moved TranslationFactor prototype into sfm directory
+  * unit test, incl Jacobians
+  * Optimization works!
+  * copyright 2020
+  * Move to its own compilation unit
+
+  [ Fan Jiang ]
+  * Fix uninitialized variable usage
+
+  [ Jose Luis Blanco-Claraco ]
+  * relax test threshold (+clang-format sort headers)
+  * Fix potential uninitialized matrix elements (Fixes #306)
+
+  [ Binit Shah ]
+  * Include corrupting noise param to parse3DFactors
+
+  [ Varun Agrawal ]
+  * Demangle the type when printing
+
+  [ Jose Luis Blanco-Claraco ]
+  * more precise use of setZero() and add comments
+
+  [ Varun Agrawal ]
+  * updated demangle code to not use unique_ptr, support for Windows, and a simple test
+  * updated cmake to include library for Windows demangling
+  * better conditional compilation
+  * demangle other type instances
+  * print custom error message if type names match
+
+  [ Tuwuh S Wibowo ]
+  * Fix Cython build on Windows/MSVC, tested on MSVC 2019 compiler
+  * Add full path to Python library, esp useful for VS generator
+
+  [ Frank dellaert ]
+  * Formatting only
+
+  [ Bernd Pfrommer ]
+  * added email parameter to ubuntu/debian packaging scripts
+
+  [ Varun Agrawal ]
+  * optional jacobian computation in PreintegrationBase predict function
+
+  [ Binit Shah ]
+  * Sampler initialized with noise argument
+  * Alternate signs on Hat/Vee and update tests
+
+  [ Zbynek Winkler ]
+  * Fix problem introduced in #255.
+
+  [ Binit Shah ]
+  * Using optional sampler outside loop
+  * Changed logmap tolerance for failed platform
+
+  [ acxz ]
+  * remove unused post order traversal
+
+  [ Bernd Pfrommer ]
+  * Use GNUInstallDirs to make install destination directories configurable
+
+  [ Varun Agrawal ]
+  * Added FunctorizedFactor and corresponding tests
+
+  [ Bernd Pfrommer ]
+  * rename libmetis -> libmetis-gtsam to avoid collision with system libs
+
+  [ Varun Agrawal ]
+  * fixes, better tests, docs
+  * remove TODO
+  * improved documentation
+
+  [ Martin Vonheim Larsen ]
+  * Added test for Unit3::operator=
+  * Properly handle basis in Unit3::operator=
+
+  [ Fan Jiang ]
+  * Switched to in-place update of the diagonal Hessian
+  * Use find
+
+  [ Varun Agrawal ]
+  * wrap the addPrior method and added a test for python
+  * removed dependency on Eigen3 since we provide Eigen 3.3.7 and Ubuntu Bionic provides Eigen 3.3.4.
+
+  [ Fan Jiang ]
+  * Use faster version of in-place add
+  * fix checks
+
+  [ Martin V. Larsen ]
+  * Update testUnit3.cpp
+
+  [ Fan Jiang ]
+  * Fix build
+
+  [ Varun Agrawal ]
+  * improve and modernize the Dockerfiles
+
+  [ Fan Jiang ]
+  * Fixed emplace to align with std
+
+  [ Varun Agrawal ]
+  * small logistical fixes
+
+  [ Fan Jiang ]
+  * Move to header
+  * Fixed TBB detection and make emplace great again
+  * replaced all find&insert to emplace
+  * Zero initialize the allocated vector
+  * Address comments
+  * Further optimization
+  * Trying to fix old GCC
+  * Devirtualize hessianDiagonal
+
+  [ Jose Luis Blanco Claraco ]
+  * remove out-of-place pragma
+
+  [ acxz ]
+  * add tests for TBB build
+
+  [ Varun Agrawal ]
+  * Plotting updates
+  * Undo API changes
+
+  [ Gerry Chen ]
+  * put file stream inside scope to force buffer flush This was already fixed for serializeXML but not for serializeToXMLFile or deserializeFromXMLFile.
+  * bypass assert_equal tests for file roundtrips
+  * better comments on serializationTestHelper functions
+
+  [ Varun Agrawal ]
+  * add resetIntegrationAndSetBias to wrapper
+  * add guassian noise to initial estimates in Imu example
+
+  [ Fan Jiang ]
+  * Add logging (hooked) optimizer
+  * Update trigger-python.yml
+
+  [ Varun Agrawal ]
+  * docstring update
+  * Wrapper updates for IMU data
+  * remove wrapping of Key
+
+  [ Jose Luis Blanco-Claraco ]
+  * unhide doc section in PDF
+
+  [ Fan Jiang ]
+  * Fix comet_ml test failing
+
+  [ Varun Agrawal ]
+  * comment notifying end of symbol_shorthand namespace
+  * add full namespace global function wrapping
+  * update python functions to include namespace
+  * Updated examples and tests with new symbol shorthands
+
+  [ Binit Shah ]
+  * Conditioned logmap test on rotation format
+
+  [ Varun Agrawal ]
+  * remove extra semicolon
+
+  [ Binit Shah ]
+  * Better explanation of Rot3 Logmap Lund unit test
+
+  [ Jose Luis Blanco Claraco ]
+  * Remove all debian package files from this repository.
+
+  [ Frank dellaert ]
+  * Fixed override warnings and added a few missing headers
+
+  [ Varun Agrawal ]
+  * renamed testScenarios to testScenarioRunner
+  * move Eigen format definition to Matrix.h
+  * use Eigen formatting for Rot3 ostream
+  * don't align matrix columns
+  * fix print tests for Rot3 and Pose3
+  * set CMAKE_VERBOSE_MAKEFILE flag to OFF
+  * Cleaned up printing of Rot3
+  * Cleaned up printing of Pose3
+  * Cleaned up printing of NavState
+
+  [ Jose Luis Blanco-Claraco ]
+  * Finish undo of #310 fill with zeros (not actually needed)
+
+  [ Varun Agrawal ]
+  * moved matlab-style matrix format definition back to cpp, updated all formatters
+  * use static_cast for Rot3 matrix
+
+  [ David ]
+  * Add Pose3-Point3 factor
+  * Update incorrect test name
+  * Add more documentation and clang-format
+
+  [ Frank Dellaert ]
+  * Importing Frobenius error factors from Shonan effort
+
+  [ Fan Jiang ]
+  * Fix UAF
+  * Fixed all alignment problems
+  * Add missing include
+  * Fix wrap tests
+  * Address Frank's comments
+  * Move away from boost
+
+  [ Varun Agrawal ]
+  * export cython install path so it can be picked up by other cmake projects
+  * cmake function to install python package once make install is completed
+
+  [ Gerry Chen ]
+  * use boost paths append to have platform agnostic path separators
+
+  [ Varun Agrawal ]
+  * add new make command for installing python wrapper
+
+  [ Gerry Chen ]
+  * Separate stream creation and serialization Recommended by @ProfFan in #343 with the objective of making (de)serialize to string and to file more similar
+  * formatting to Google style
+
+  [ Varun Agrawal ]
+  * added comments and removed unnecessary code
+
+  [ Gerry Chen ]
+  * fixed unit test failure on `testSerializationBase` object `output` was getting reused, but should be re-loaded into a "blank" object each time.
+  * reset filesystem - forgot to uncomment these after debugging
+
+  [ akrishnan86 ]
+  * optional initialization for LMParams
+
+  [ Varun Agrawal ]
+  * Set minimum supported numpy version to 1.11.0 (#366)
+
+  [ Fan Jiang ]
+  * Revise comments
+
+  [ Gerry Chen ]
+  * remove file roundtrip test for pointers
+
+  [ Varun Agrawal ]
+  * updated comments in shell script
+  * added Windows batch script to install python wrapped package
+
+  [ Fan Jiang ]
+  * Style fixes as commented by @dellaert
+
+  [ Gerry Chen ]
+  * serialization docstrings
+  * rename serialization functions with less ambiguous names According to Varun's suggestion. Note: string functions should be automatically inlined by compiler to avoid passing big strings.
+
+  [ Varun Agrawal ]
+  * pure CMake script to install Python wrapper after compiling
+  * removed extra line
+  * reset to previous version
+
+  [ Fan Jiang ]
+  * Add comments
+  * Switch to the new alignment marker type
+
+  [ Varun Agrawal ]
+  * Load Cython requirements file instead of reading it in cmake
+  * Added cmake variable GTSAM_CYTHON_INSTALL_FULLPATH to include build tag directly
+  * Vastly improved setup.py template
+  * Specify working directory from where to call setup.py
+  * print Eigen Unsupported status message correctly
+  * wrap the biasHat function for PreintegratedMeasurement
+  * added .gitignore for when building the sample cmake projects
+
+  [ Fan Jiang ]
+  * Add missing lf
+
+  [ akrishnan86 ]
+  * fix SfmData naming
+
+  [ Varun Agrawal ]
+  * Revert "added .gitignore for when building the sample cmake projects"
+
+  [ akrishnan86 ]
+  * review1 changes
+
+  [ Varun Agrawal ]
+  * make python-install command depends on gtsam target
+  * cleaner version of execution script which only needs 'make install'
+  * run setup.py after installing the gtsam_eigency module
+  * capture stdout in python test [only for python3]
+  * newline added to end of CMake file
+  * Set high level Cython/Eigency variables to reduce duplication
+  * Create and use cython build directory
+  * Use the high level cython variables, improve install process
+  * Remove redundant postfix checking since the postfix is already added at the top level
+  * updated cython wrapper README
+  * In-place cython build
+  * fixed CYTHON_INSTALL_PATH cmake variable wrt cache
+  * Python Wrapper CMake update
+  * removed unneeded install commands and updated README
+  * Add python-install dependency for gtsam_unstable as well
+  * make utils and test code python2 compliant
+  * update python build location in travis script
+
+  [ Fan Jiang ]
+  * Fix memory leak in Expressions
+  * Fix TranslationFactor with Vector3 as Point3
+  * Fix MSVC build
+
+  [ Varun Agrawal ]
+  * Improved paths and added checks
+
+  [ Jose Luis Blanco-Claraco ]
+  * Fix missing DLL exported symbol
+
+  [ Varun Agrawal ]
+  * new definition for FunctorizedFactor to allow for using std::function and lambdas
+  * Simplified FunctorizedFactor
+
+  [ Fan Jiang ]
+  * Fix FrobeniusWormholeFactor Python test
+
+  [ Varun Agrawal ]
+  * fix working directory for python install target
+  * test SmartFactor when body_P_sensor is passed in
+
+  [ Thomas Jespersen ]
+  * ISAM2 Kitti example: Addressed review comments
+
+  [ Mike Sheffler ]
+  * Second attempt at a wrapper fix.
+
+  [ Varun Agrawal ]
+  * Abstracted out serialization code for PreintegrationBase
+
+  [ Mike Sheffler ]
+  * Unnecessary include statement
+
+  [ Varun Agrawal ]
+  * Updated  PreintegratedImuMeasurements docstring
+
+  [ Fan Jiang ]
+  * Fix lambda check in logging optimizer
+
+  [ Varun Agrawal ]
+  * Replace scoped name with direct name and instantiate base class in constructor
+  * Major updates to CombinedImuFactor to make it Testable as well as serializable
+  * Fix typo
+  * Added and updated serialization tests to include all IMU factors
+  * revert variable change
+  * reduced tolerance for checking jacobian
+
+  [ Fan Jiang ]
+  * add return value in gtsam_optimize
+
+  [ Frank dellaert ]
+  * Eliminated some copy/paste
+  * Added g2o test files
+  * Added tests on determinants of read rotations
+  * Normalized quaternions before converting to Rot3 to account for limited precision in text files.
+  * Avoided extra conversions to quaternions
+
+  [ Varun Agrawal ]
+  * Add indentation
+  * Handle extrinsics and intrinsics for jacobian
+
+  [ Frank dellaert ]
+  * Formatted and fixed discrete examples
+
+  [ Varun Agrawal ]
+  * Use built in Matrix serialization
+  * Generic Eigen::Matrix serialization for boost
+  * add compiler flags to suppress warnings if built in release mode
+  * Add MATLAB root and Mex paths to cmake output, align GTSAM specific output
+  * Quote variable so it works on Windows
+  * Use static matrix and constexpr
+  * use boost serialization macro instead of make_array
+
+  [ Fan Jiang ]
+  * Added wrapping for the PCG solver in Cython
+  * add comments
+
+  [ Varun Agrawal ]
+  * suppress warnings only for 3rd party code for Release builds
+  * fix init issues with Vector3, use static matrices where possible
+  * added note about code source and eigen resize for both static and dynamic matrices
+  * Explicit type definition to handle warning
+  * support for landmarks in g2o files
+
+  [ Fan Jiang ]
+  * Add check to ensure we are calling lambda on a LM
+
+  [ Varun Agrawal ]
+  * correct compiler flag for Windows
+
+  [ Fan Jiang ]
+  * Add unit test
+  * use isinstance
+
+  [ Varun Agrawal ]
+  * added cmake policy for AppleClang compiler identification
+
+  [ Fan Jiang ]
+  * Move the declaration to cpp
+
+  [ Varun Agrawal ]
+  * Better way of exporting Boost serialization guid
+
+  [ Frank dellaert ]
+  * Resurrecting DiscreteBayesTree tests
+
+  [ yetongumich ]
+  * modified test
+
+  [ Frank dellaert ]
+  * Checked in pdf for easy reference
+  * added printSignature and evaluate
+  * Fixed link issue
+  * Cleaned up formatting
+  * Fixed tests
+
+  [ Varun Agrawal ]
+  * perform equality comparison on root of class hierarchy
+  * correct vector init
+  * delete extra pdf file
+  * Revert "delete extra pdf file"
+
+  [ yetongumich ]
+  * deprecate error in noisemodel, use loss instead; revise virtual with override
+  * deprecate error in noisemodel, use loss instead; revise virtual with override
+
+  [ Frank dellaert ]
+  * Extra tests on frontal keys
+  * Some more refactoring of marginals
+  * Fix confusion between parents and frontals
+  * Added code to re-jigger Signature cpt so that frontal keys are always first, consistent with how the DiscreteElimination function works.
+  * New discrete example
+  * Better print
+  * Cleaned up tests
+  * Use dict notation in print
+  * Add explicit HMM example
+  * Modernized sample function
+
+  [ yetongumich ]
+  * modify testNoiseModel to use loss instead of error
+  * change doc
+
+  [ Varun Agrawal ]
+  * fix serialization warning for boost::optional<Vector3>
+
+  [ Frank dellaert ]
+  * Partial Specialization
+  * Add BayesNet-inst.h at end of BayesNet.h
+
+  [ Varun Agrawal ]
+  * correct indentation for Python version
+
+  [ Mike Sheffler ]
+  * Missing BOOST_SERIALIZATION_NVP wrapper macro for an argument to be serialized
+
+  [ Jose Luis Blanco Claraco ]
+  * docker tag and pip3 fixes; add a readme
+  * complete README
+
+  [ acxz ]
+  * set default initialization
+
+  [ Frank dellaert ]
+  * Fixed conventions for Jacobians
+  * Unit test for transformPoseFrom
+  * Some more name changes and documentation
+
+  [ Varun Agrawal ]
+  * Added more comments for clearer understanding
+
+  [ Fan Jiang ]
+  * Bump version and switch Pose3 expmap default
+
+  [ Varun Agrawal ]
+  * nicer formatting when printing values
+
+  [ Fan Jiang ]
+  * Fix test for full Pose3 expmap
+  * Remove pybind11
+
+  [ Frank dellaert ]
+  * Replaced flag with 4.1 version
+  * Removed all deprecated code w Stephanie...
+
+  [ acxz ]
+  * replace boost random with std random
+
+  [ Varun Agrawal ]
+  * add axis labels to the trajectory plot
+
+  [ acxz ]
+  * use reasonable distribution names
+  * use reasonable distribution name
+  * remove unused base variable
+
+  [ Varun Agrawal ]
+  * fix test for FunctorizedFactor printing
+  * Fix minor bugs
+  * test for readG2o
+  * added axis labels and figure titles as optional params
+  * increase number of build cores and remove sudo requirement
+  * added backwards compatibility for parseVertex
+
+  [ Frank dellaert ]
+  * Improved comment
+  * Made params const
+
+  [ acxz ]
+  * pass in expected Rot3 and parameter p
+
+  [ Jose Luis Blanco Claraco ]
+  * recover SLAM serialization test
+  * Add docs on serializing expressions.
+  * enable compiler warnings and errors for safer code
+  * Fix all new gcc warnings/errors: make explicit virtual/override methods.
+  * Avoid -Woverride in clang <12.0.0
+  * relax override -Werror for now
+  * Fix missing virtual dtors
+  * Fix warnings on incorrect for range reference bindings
+  * remove leftover cmake debug trace
+
+  [ acxz ]
+  * fix warnings on incorrect for range reference bindings
+  * remove useless Planning test
+  * fix return copy
+  * add override keyword
+  * workaround to dereferencing a nullptr
+
+  [ Jose Luis Blanco Claraco ]
+  * Add genericValue() helper
+  * Values initializer_list constructor
+
+  [ Varun Agrawal ]
+  * use \n instead of endl
+
+  [ Jose Luis Blanco-Claraco ]
+  * docs and missing traits
+  * Add variadic-template N-ary ExpressionFactor
+  * typo
+
+  [ Jose Luis Blanco Claraco ]
+  * Deprecate ExpressionFactor2
+  * port ExpressionFactor{2->N}
+
+  [ Jose Luis Blanco-Claraco ]
+  * Add unit test revealing deserialization error
+  * Fix serialization bug in RangeFactor
+
+  [ Jose Luis Blanco Claraco ]
+  * Deprecate ExpressionFactor2 for 4.1
+  * Recover the convenient evaluateError() method
+  * fix evaluateError() methods
+
+  [ Varun Agrawal ]
+  * fixed tests
+
+  [ acxz ]
+  * remove empty smart folder
+  * remove smart from cmake
+
+  [ Varun Agrawal ]
+  * fix indentation of macro guard
+  * wrap preintegrated function
+
+  [ Stephanie McCormick ]
+  * change from const Params back to non-const Params
+
+  [ Varun Agrawal ]
+  * remove virtual
+
+  [ Frank Dellaert ]
+  * Allow graph to be queried
+  * VectorizedGenerators
+  * Removed superfluous size, added doxygen partitions
+  * Allow to pass in pre-computed generators. Should save some energy.
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Fri, 07 Aug 2020 12:23:26 -0400
+
+gtsam (4.0.2-2ubuntu3) focal; urgency=medium
+
+  * updated distro to focal
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Thu, 11 Jun 2020 08:07:01 -0400
+
+gtsam (4.0.2-2ubuntu2) focal; urgency=medium
+
+  * updated distro to bionic
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Thu, 11 Jun 2020 08:07:01 -0400
+
+gtsam (4.0.2-2ubuntu1) xenial; urgency=medium
+
+  * update distro to xenial
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Thu, 11 Jun 2020 07:09:11 -0400
+
