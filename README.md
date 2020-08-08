@@ -155,6 +155,7 @@ release, i.e. -1ubuntu2, -1ubuntu3 etc.
 
     distro=bionic
     gbp dch --debian-branch=${vendor}/release --release --upstream-tag='%(version)s' --distribution=${distro} --git-author
+	git commit -a
     gbp buildpackage -k${gpg_key} -S --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/release
 
 
