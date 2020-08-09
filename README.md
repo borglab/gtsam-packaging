@@ -144,7 +144,7 @@ This should leave you with a bunch of files in the directory *above*
 the source directory. These can now be uploaded into your ppa (see below).
 
 
-## Creating releases for other repos
+## Creating releases for other distros
 
 Once you have a GTSAM release created for one Ubuntu release
 (e.g. xenial), it's easy to create another one. You need to leave the
@@ -158,6 +158,45 @@ release, i.e. -1ubuntu2, -1ubuntu3 etc.
 	git commit -a
     gbp buildpackage -k${gpg_key} -S --git-pristine-tar --git-pristine-tar-commit --git-upstream-tag='%(version)s' --git-debian-branch=${vendor}/release
 
+
+## Creating snapshot releases
+
+If you want to run nightly snapshots, you can use ``dch`` to
+auto-generate an increasing version number, and update the changelog
+so you can see what commits have been made since the previous
+snapshot. [Here is the relevant documentation](https://honk.sigxcpu.org/projects/git-buildpackage/manual-html/gbp.snapshots.html). 
+
+Note: while ``dch`` offers many ways to generate a snapshot version
+number, you must take care that it is strictly monotonically
+increasing, or Ubuntu's build server will balk. The simplest way is to
+run dch with only the ``--snapshot`` argument as shown below
+(assuming you have named your snapshot branch ``$vendor/snapshot``).
+
+The Ubuntu always wants to work off of a ``pristine`` tar ball. In the following, the pristine tar ball is set to be the one from the last release (``$version``):
+
+    # create the pristine tar ball from the last release
+	pristine-tar checkout ../gtsam_${version}.orig.tar.gz
+	git checkout ${vendor}/snapshot  # switch to snapshot tracking branch
+    git fetch upstream develop    # get the latest development branch
+	git merge upstream/develop    # merge latest dev branch into snapshot
+	# now build patch file for difference between snapshot -> release
+	# update changelog
+    gbp dch --debian-branch=${vendor}/snapshot --snapshot --git-author
+	# get snapshot version from changelog
+	snap=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
+    dpkg-source --commit . ${snap}.patch
+	# commit updated changelog
+	git commit -a -m "updated to snapshot to $snap"
+	# commit the patches to the debian directory
+    git add debian/patches/series debian/patches/*.patch
+	git commit -m "added patch files for $snap"
+    git checkout .
+	rm -rf .pc    # remove to avoid package build error
+	# push changes made to snapshot tracking branch
+	git push origin ${vendor}/snapshot
+	# build package
+	gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${vendor}/snapshot
+	# now you should be able to upload the package to your ppa
 
 ## Upload to Ubuntu PPA
 
