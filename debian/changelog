@@ -1,0 +1,5 @@
+gtsam (4.1.0-1ubuntu1~1.gbp920eae) UNRELEASED; urgency=medium
+
+  ** initial snapshot based on tag 4.1rc
+  
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 07:46:36 -0400
