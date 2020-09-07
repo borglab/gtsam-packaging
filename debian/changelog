@@ -1,10 +1,19 @@
-gtsam (4.1.0-1ubuntu1~4.gbp4afe6a) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~5.gbpb4fe31) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @b4fe31534ac2240c57bc687f1909cee54c65faac **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @4afe6a07d36563a9226a66a1a0efa1f5cf8bc9b3 **
 
   * modified changelog for distro bionic
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 20:52:38 -0400
+  [ Varun Agrawal ]
+  * new function readBal which returns the SfmData object, allowing for single line calling
+
+  [ Bernd Pfrommer ]
+  * commit of final snapshot version number update
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 21:11:36 -0400
 
 gtsam (4.1.0-1ubuntu1~3.gbp36a7cc) bionic; urgency=medium
 

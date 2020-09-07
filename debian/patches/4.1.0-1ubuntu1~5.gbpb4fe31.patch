@@ -5,84 +5,20 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~2.gbpaf2d39) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~5.gbpb4fe31) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @af2d3906b190820408219dfeaccab194557cd510 **
+   ** SNAPSHOT build @b4fe31534ac2240c57bc687f1909cee54c65faac **
  .
    [ Bernd Pfrommer ]
-   ** initial snapshot based on tag 4.1rc
+   ** SNAPSHOT build @4afe6a07d36563a9226a66a1a0efa1f5cf8bc9b3 **
+ .
+   * modified changelog for distro bionic
  .
    [ Varun Agrawal ]
-   * fix deprecation warnings from Matplotlib
-   * reduce for loops, add titles to plots, better space subplots for IMU data
-   * vastly improved the basic ImuFactorExample script
-   * updated filename in brief
-   * improved result printing and use of flags for ImuFactorExample.py
-   * renamed ImuFactorExample2 to ImuFactorISAM2Example
-   * added function to plot trajectory incrementally
-   * improvements to ImuFactorExample
-   * updated file docstring for ImuFactorExample2.cpp
-   * small improvements to the ImuFactorExample.py
-   * example using CombinedImuFactor
-   * fix deprecation warnings from Matplotlib
-   * reduce for loops, add titles to plots, better space subplots for IMU data
-   * vastly improved the basic ImuFactorExample script
-   * updated filename in brief
-   * improved result printing and use of flags for ImuFactorExample.py
-   * renamed ImuFactorExample2 to ImuFactorISAM2Example
-   * added function to plot trajectory incrementally
-   * improvements to ImuFactorExample
-   * updated file docstring for ImuFactorExample2.cpp
-   * small improvements to the ImuFactorExample.py
-   * example using CombinedImuFactor
-   * renamed ImuFactorExample2 to be more consistent with naming
-   * revert author change
-   * reworked basic ImuFactorsExample
-   * use boost program_options for command line parsing
-   * replace atof/atoi with standardized stof/stoi
+   * new function readBal which returns the SfmData object, allowing for single line calling
  .
-   [ jingwuOUO ]
-   * Replace MakeATangentVector with MakeATangentVectorValues
- .
-   [ Frank dellaert ]
-   * Linting and getAnchor wrap
- .
-   [ jingwuOUO ]
-   * Fixed checkwitheigen testcase failure
- .
-   [ Frank dellaert ]
-   * added missing namespace
- .
-   [ jingwuOUO ]
-   * Rename and small fix.
-   * Changed TangentVectorValues test
- .
-   [ Christian Berg ]
-   * Added Jacobians for Rot3::RzRyRx and related named constructors
- .
-   [ Varun Agrawal ]
-   * Define dataset directory for Python package
-   * Add python dataset directory to search options
-   * Add data files to python package
-   * Better location for setting Python dataset directory in CMake
- .
-   [ Christian Berg ]
-   * Also add jacobians to Rot3::RzRyRx for when quaternions are selected
- .
-   [ Varun Agrawal ]
-   * Print Vectors horizontally for easier reading
-   * Undo previous changes for common directory
-   * don't wrap findExampleDataFile
-   * Add python version of findExampleDataFile
-   * Undo Point operator overloading and instead update NavState print
-   * check for null pointer in general
- .
-   [ Timothy Setterfield ]
-   * fixed issue that pos and vel are in nav frame
-   * added another coriolis unit test
-   * added cached rotation bRn
-   * cleaned up notation
-   * fixed typo
+   [ Bernd Pfrommer ]
+   * commit of final snapshot version number update
 Author: Bernd Pfrommer <bernd.pfrommer@gmail.com>
 
 ---
@@ -1865,6 +1801,39 @@ Last-Update: 2020-09-07
  
    // Construct test descent direction (as minEigenVector is not predictable
    // across platforms, being one from a basically flat 3d- subspace)
+--- gtsam-4.1.0.orig/gtsam/slam/dataset.cpp
++++ gtsam-4.1.0/gtsam/slam/dataset.cpp
+@@ -1130,6 +1130,13 @@ bool readBAL(const string &filename, Sfm
+ }
+ 
+ /* ************************************************************************* */
++SfmData readBAL(const string &filename) {
++  SfmData data;
++  readBAL(filename, data);
++  return data;
++}
++
++/* ************************************************************************* */
+ bool writeBAL(const string &filename, SfmData &data) {
+   // Open the output file
+   ofstream os;
+--- gtsam-4.1.0.orig/gtsam/slam/dataset.h
++++ gtsam-4.1.0/gtsam/slam/dataset.h
+@@ -278,6 +278,14 @@ GTSAM_EXPORT bool readBundler(const std:
+ GTSAM_EXPORT bool readBAL(const std::string& filename, SfmData &data);
+ 
+ /**
++ * @brief This function parses a "Bundle Adjustment in the Large" (BAL) file and returns the data
++ * as a SfmData structure. Mainly used by wrapped code.
++ * @param filename The name of the BAL file.
++ * @return SfM structure where the data is stored.
++ */
++GTSAM_EXPORT SfmData readBAL(const std::string& filename);
++
++/**
+  * @brief This function writes a "Bundle Adjustment in the Large" (BAL) file from a
+  * SfmData structure
+  * @param filename The name of the BAL file to write
 --- gtsam-4.1.0.orig/python/CMakeLists.txt
 +++ gtsam-4.1.0/python/CMakeLists.txt
 @@ -4,6 +4,10 @@ if (NOT GTSAM_BUILD_PYTHON)
