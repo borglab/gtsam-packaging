@@ -1,5 +1,80 @@
-gtsam (4.1.0-1ubuntu1~1.gbp920eae) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~2.gbpaf2d39) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @af2d3906b190820408219dfeaccab194557cd510 **
+
+  [ Bernd Pfrommer ]
   ** initial snapshot based on tag 4.1rc
   
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 07:46:36 -0400
+  [ Varun Agrawal ]
+  * fix deprecation warnings from Matplotlib
+  * reduce for loops, add titles to plots, better space subplots for IMU data
+  * vastly improved the basic ImuFactorExample script
+  * updated filename in brief
+  * improved result printing and use of flags for ImuFactorExample.py
+  * renamed ImuFactorExample2 to ImuFactorISAM2Example
+  * added function to plot trajectory incrementally
+  * improvements to ImuFactorExample
+  * updated file docstring for ImuFactorExample2.cpp
+  * small improvements to the ImuFactorExample.py
+  * example using CombinedImuFactor
+  * fix deprecation warnings from Matplotlib
+  * reduce for loops, add titles to plots, better space subplots for IMU data
+  * vastly improved the basic ImuFactorExample script
+  * updated filename in brief
+  * improved result printing and use of flags for ImuFactorExample.py
+  * renamed ImuFactorExample2 to ImuFactorISAM2Example
+  * added function to plot trajectory incrementally
+  * improvements to ImuFactorExample
+  * updated file docstring for ImuFactorExample2.cpp
+  * small improvements to the ImuFactorExample.py
+  * example using CombinedImuFactor
+  * renamed ImuFactorExample2 to be more consistent with naming
+  * revert author change
+  * reworked basic ImuFactorsExample
+  * use boost program_options for command line parsing
+  * replace atof/atoi with standardized stof/stoi
+
+  [ jingwuOUO ]
+  * Replace MakeATangentVector with MakeATangentVectorValues
+
+  [ Frank dellaert ]
+  * Linting and getAnchor wrap
+
+  [ jingwuOUO ]
+  * Fixed checkwitheigen testcase failure
+
+  [ Frank dellaert ]
+  * added missing namespace
+
+  [ jingwuOUO ]
+  * Rename and small fix.
+  * Changed TangentVectorValues test
+
+  [ Christian Berg ]
+  * Added Jacobians for Rot3::RzRyRx and related named constructors
+
+  [ Varun Agrawal ]
+  * Define dataset directory for Python package
+  * Add python dataset directory to search options
+  * Add data files to python package
+  * Better location for setting Python dataset directory in CMake
+
+  [ Christian Berg ]
+  * Also add jacobians to Rot3::RzRyRx for when quaternions are selected
+
+  [ Varun Agrawal ]
+  * Print Vectors horizontally for easier reading
+  * Undo previous changes for common directory
+  * don't wrap findExampleDataFile
+  * Add python version of findExampleDataFile
+  * Undo Point operator overloading and instead update NavState print
+  * check for null pointer in general
+
+  [ Timothy Setterfield ]
+  * fixed issue that pos and vel are in nav frame
+  * added another coriolis unit test
+  * added cached rotation bRn
+  * cleaned up notation
+  * fixed typo
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 20:42:12 -0400
