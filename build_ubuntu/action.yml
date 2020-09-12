@@ -1,0 +1,36 @@
+# action.yml
+name: 'Package Ubuntu GTSAM Snapshot'
+description: 'Creates a Ubuntu GTSAM snapshot and uploads source package to Ubuntu ppa'
+inputs:
+  ppa-name:  # id of field
+    description: 'name of ubuntu PPA'
+    required: true
+    default: 'ppa:my-ppa/gtsam-snapshot'
+  vendor:  # id of field
+    description: 'name of vendor (debian, ubuntu, ...)'
+    required: true
+    default: 'ubuntu'
+  snapshot_base:  # id of field
+    description: 'GTSAM version number (e.g. 4.1.0) used as base'
+    required: true
+    default: '4.1.0'
+  upstream:  # id of field
+    description: 'location of upstream GTSAM repo'
+    required: true
+    default: 'https://github.com/borglab/gtsam.git'
+  gpg_key:  # id of field
+    description: 'fingerprint of gpg key used for signing'
+    required: true
+    default: '4C649EB4C6BD1CD91958A80705B87E5F5DBD606E'
+outputs:
+  status: # id of output
+    description: 'Status output'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.ppa-name }}
+    - ${{ inputs.vendor }}
+    - ${{ inputs.snapshot_base }}
+    - ${{ inputs.upstream }}
+    - ${{ inputs.gpg_key }}

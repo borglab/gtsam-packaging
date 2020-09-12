@@ -1,0 +1,32 @@
+name: Build Ubuntu package on push
+
+on:
+ push:
+    branches:
+      - master
+ schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron: '57 2 * * *' # run at 02:57:00 UTC
+
+jobs:
+  build_ubuntu_job:
+    runs-on: ubuntu-latest
+    name: Job to build and upload ubuntu source package
+    steps:
+      # dummy line test
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: build ubuntu
+        uses: ./build_ubuntu/ # Uses an action in the actions directory
+        id: buildubuntu
+        with:
+          ppa-name: 'ppa:bernd-pfrommer/gtsam-snapshot'
+          vendor: 'ubuntu'
+          snapshot_base: '4.1.0'
+          upstream: 'https://github.com/borglab/gtsam.git'
+          gpg_key: '4C649EB4C6BD1CD91958A80705B87E5F5DBD606E'
+      # Use the status from the buildubuntu step
+      - name: get status
+        run: echo "The status is ${{ steps.buildubuntu.outputs.status }}"
