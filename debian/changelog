@@ -1,10 +1,133 @@
-gtsam (4.1.0-1ubuntu1~8.gbpbecb3c) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~9.gbp7e9243) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @7e92436e2f36610750d1e00143e70ccc098724b9 **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @becb3c96c25f24603e658979510fa23bc5c0f7cb **
 
   * modified changelog for distro focal
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 06 Sep 2020 21:19:55 -0400
+  [ Varun Agrawal ]
+  * typo fix
+
+  [ akrishnan86 ]
+  * forking code for mfas from 1dsfm
+  * changing mfas to use gtsam keys
+  * adding tests
+  * tests and documentation
+  * formatting headers and removing debugging code
+  * changing MFAS to oops and refactoring
+  * minor comments change
+  * constructor API change after review1
+  * changes after review - removing positiveEdgeWeights
+  * wrapping translation recovery doesnt build
+  * TAvg wrapper builds
+
+  [ Varun Agrawal ]
+  * follow Google Style for function naming
+  * Wrapper updates
+
+  [ JIanzhu Huai ]
+  * correct coefficients of approximated SE3 Q_r
+
+  [ Varun Agrawal ]
+  * update minimum Boost version required
+
+  [ JIanzhu Huai ]
+  * test computeQforExpmapDerivative
+
+  [ Fan Jiang ]
+  * Wrap DSFMap so SFM can use them
+  * Add the unit test for DSF in Python
+  * Fix include issue
+
+  [ akrishnan86 ]
+  * translation recovery py test
+
+  [ Akshay Krishnan ]
+  * translation recovery unit tests pass
+
+  [ Bernd Pfrommer ]
+  * commit of final snapshot version number update
+
+  [ Akshay Krishnan ]
+  * remove binarymeasurementsunit3 class in wrapper
+
+  [ akrishnan86 ]
+  * adding binarymeasurementsunit3
+
+  [ Frank dellaert ]
+  * Fix typo
+
+  [ Christian Berg ]
+  * Added Jacobians for Rot3::xyz and related conversions to euler angles
+
+  [ akrishnan86 ]
+  * code changes to increase modularity
+  * fixes1
+  * fixes2
+
+  [ Akshay Krishnan ]
+  * fixes3
+
+  [ Christian Berg ]
+  * Throw exception in Rot3::RQ for derivatives close to singularity
+
+  [ Varun Agrawal ]
+  * Squashed 'wrap/' changes from 49d831588..314b121fd
+  * Use cmake to identify best Python version if Default requested
+  * Make SharedNoiseModel as optional parameter, remove hardcoded verbosity, and silence test.
+  * print version of TBB found
+  * Don't print private compile options
+  * fix wrapper TODOs for ISAM2 and BearingRange
+  * minor formatting
+
+  [ Ayush Baid ]
+  * Adding logmap API which applied a logarithmic map taking the object to the argument
+  * Removing logmap in case of failure
+
+  [ John Lambert ]
+  * Update README.md
+  * improve python wrapper cmake flag instructions
+  * Update README.md
+  * Update README.md
+  * Update README.md
+  * use cleaner checkmark symbol in readme
+  * update example list
+  * update python examples list
+  * add p
+  * add python equivalent of c++ sfm data calls
+  * cannot retrieve p attribute
+
+  [ Varun Agrawal ]
+  * update numericalDerivative functions to take in optional dimension template parameter and added corresponding tests
+
+  [ John Lambert ]
+  * remove BAL for now, and add get3dPoint() for p access
+  * mark SFMExample_bal as still in progress
+
+  [ Varun Agrawal ]
+  * remove logmap function from LieVector and LieMatrix
+
+  [ John Lambert ]
+  * rename get3dPoint() to point3()
+
+  [ Varun Agrawal ]
+  * small fixes to ensure marginals are computed correctly
+  * update wrapper to also work for Matlab
+
+  [ JIanzhu Huai ]
+  * test Qr with old codebase fails
+  * correct Qr coefficients in approximation
+
+  [ Varun Agrawal ]
+  * Squashed 'wrap/' changes from 314b121fd..5e1373486
+  * wrapped BearingRange::Measure method and removed deprecated classes
+  * remove all LieScalar/LieVector/LieMatrix references from wrapper
+  * MATLAB readme update
+  * remove Point3 serialization test since Point3 is now just a vector
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 27 Sep 2020 23:31:33 +0000
 
 gtsam (4.1.0-1ubuntu1~7.gbpfe1a1c) focal; urgency=medium
 
