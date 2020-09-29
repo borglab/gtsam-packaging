@@ -1,3 +1,11 @@
+gtsam (4.1.0-1ubuntu1~16.gbp02b2f4) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @02b2f43fa9f637d9b7b2cbc39cd87901e3c98640 **
+
+  * modified changelog for distro focal
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Tue, 29 Sep 2020 03:07:11 +0000
+
 gtsam (4.1.0-1ubuntu1~15.gbp0d069e) focal; urgency=medium
 
   ** SNAPSHOT build @0d069e431aacc15eb0cfe3b3d8c7a216f9ab58e7 **
