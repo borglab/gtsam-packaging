@@ -1,10 +1,58 @@
-gtsam (4.1.0-1ubuntu1~12.gbp4eea64) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~13.gbpbbd207) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @bbd2071637be94c4500c3f696f46bd76c612b9e8 **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @4eea64f2e77384ea093976ea55d110945032bcb6 **
 
   * modified changelog for distro focal
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sun, 27 Sep 2020 23:32:53 +0000
+  [ Ellon Paiva Mendes ]
+  * Bump version to 4.0.2
+  * Install GTSAMConfigVersion.cmake
+
+  [ Jose Luis Blanco-Claraco ]
+  * Remove obsolete cmake FindXX modules.
+
+  [ ss ]
+  * Finish Sim3 align and transformFrom functions.
+  * Fix document.
+  * Improve code quality.
+  * Update doc.
+
+  [ alexma3312 ]
+  * Change typedef into using.
+  * Fix GTSAM_TYPEDEF_POINTS_TO_VECTORS.
+  * Correct variable names and refactor code.
+  * Change sim3 variable from T to S.
+  * Modify the print function print out format.
+  * Replace rotAveraging with gtsam::FindKarcherMean.
+  * Add Compatibility unittest.
+  * reformat pose3 declaration.
+  * create a helper function to remove repeat code.
+  * Add a comment for transformFrom pose.
+  * Modify comments and move header file declaration.
+  * Add mean function into Point3 class.
+  * Create AlignGivenR function and refactor code.
+  * Change CMakelist file to fix merge conflict.
+  * remove commented out code
+  * document and use std::tie
+  * Refactor mean and mean_pair test case.
+  * Fix double computation.
+  * Refactor Align with short functions.
+  * Move private func to .cpp.
+  * Change getXY to calculateScale.
+  * Emphasize Rdb is a vector.
+  * Change input into centroids.
+  * Refactor code to increase speed.
+
+  [ Bernd Pfrommer ]
+  * commit of final snapshot version number update
+
+  [ alexma3312 ]
+  * Fix quaternions test failure.
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Tue, 29 Sep 2020 03:05:58 +0000
 
 gtsam (4.1.0-1ubuntu1~11.gbpbd5bf3) focal; urgency=medium
 
