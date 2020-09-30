@@ -1,3 +1,11 @@
+gtsam (4.1.0-1ubuntu1~19.gbp177edc) focal; urgency=medium
+
+  ** SNAPSHOT build @177edc138bef25bcf325ff2b739b5efe27178673 **
+
+  * modified changelog for distro bionic
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Wed, 30 Sep 2020 03:06:54 +0000
+
 gtsam (4.1.0-1ubuntu1~18.gbp33255a) bionic; urgency=medium
 
   ** SNAPSHOT build @33255a3d6e5c17fdf2d7668f76d6bffe6ff5ff9c **
