@@ -5,59 +5,41 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~13.gbpbbd207) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~17.gbp1ef9b3) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @bbd2071637be94c4500c3f696f46bd76c612b9e8 **
+   ** SNAPSHOT build @1ef9b398b3ef6d55145cb27f7597a4d76fe767a4 **
  .
    [ Bernd Pfrommer ]
-   ** SNAPSHOT build @4eea64f2e77384ea093976ea55d110945032bcb6 **
+   ** SNAPSHOT build @02b2f43fa9f637d9b7b2cbc39cd87901e3c98640 **
  .
    * modified changelog for distro focal
  .
-   [ Ellon Paiva Mendes ]
-   * Bump version to 4.0.2
-   * Install GTSAMConfigVersion.cmake
- .
-   [ Jose Luis Blanco-Claraco ]
-   * Remove obsolete cmake FindXX modules.
- .
-   [ ss ]
-   * Finish Sim3 align and transformFrom functions.
-   * Fix document.
-   * Improve code quality.
-   * Update doc.
+   [ Varun Agrawal ]
+   * ISAM2 helper methods and wrapper to evaluate nonlinear error
+   * added calibrate with jacobians for Cal3Bundler
+   * combine the calibrate functions into one
+   * put the jacobians at the end so that the calibrate function can be wrapped
+   * make tolerance as a constructor param
+   * update calibrate in wrapper
  .
    [ alexma3312 ]
-   * Change typedef into using.
-   * Fix GTSAM_TYPEDEF_POINTS_TO_VECTORS.
-   * Correct variable names and refactor code.
-   * Change sim3 variable from T to S.
-   * Modify the print function print out format.
-   * Replace rotAveraging with gtsam::FindKarcherMean.
-   * Add Compatibility unittest.
-   * reformat pose3 declaration.
-   * create a helper function to remove repeat code.
-   * Add a comment for transformFrom pose.
-   * Modify comments and move header file declaration.
-   * Add mean function into Point3 class.
-   * Create AlignGivenR function and refactor code.
-   * Change CMakelist file to fix merge conflict.
-   * remove commented out code
-   * document and use std::tie
-   * Refactor mean and mean_pair test case.
-   * Fix double computation.
-   * Refactor Align with short functions.
-   * Move private func to .cpp.
-   * Change getXY to calculateScale.
-   * Emphasize Rdb is a vector.
-   * Change input into centroids.
-   * Refactor code to increase speed.
+   * Throw an exception when n=0 .
  .
    [ Bernd Pfrommer ]
    * commit of final snapshot version number update
  .
+   [ Varun Agrawal ]
+   * use implicit function theorem to compute jacobians of Cal3Bundler::calibrate
+   * added test for Cal3Bundler::calibrate Jacobians1
+   * make Cal3Bundler wrapper constructor backwards compatible
+   * fixed sized matrices and minor improvements
+ .
    [ alexma3312 ]
-   * Fix quaternions test failure.
+   * Modify error message to be more descriptive.
+ .
+   [ Varun Agrawal ]
+   * compute inverse only once
+   * wrap PinholeCameraCal3Bundler
 Author: Bernd Pfrommer <bernd.pfrommer@gmail.com>
 
 ---
@@ -71,7 +53,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2020-09-29
+Last-Update: 2020-09-30
 
 --- gtsam-4.1.0.orig/CMakeLists.txt
 +++ gtsam-4.1.0/CMakeLists.txt
@@ -1610,14 +1592,141 @@ Last-Update: 2020-09-29
  }
  
  /* ************************************************************************* */
+--- gtsam-4.1.0.orig/gtsam/geometry/Cal3Bundler.cpp
++++ gtsam-4.1.0/gtsam/geometry/Cal3Bundler.cpp
+@@ -25,13 +25,13 @@ namespace gtsam {
+ 
+ /* ************************************************************************* */
+ Cal3Bundler::Cal3Bundler() :
+-    f_(1), k1_(0), k2_(0), u0_(0), v0_(0) {
++    f_(1), k1_(0), k2_(0), u0_(0), v0_(0), tol_(1e-5) {
+ }
+ 
+ /* ************************************************************************* */
+-Cal3Bundler::Cal3Bundler(double f, double k1, double k2, double u0, double v0) :
+-    f_(f), k1_(k1), k2_(k2), u0_(u0), v0_(v0) {
+-}
++Cal3Bundler::Cal3Bundler(double f, double k1, double k2, double u0, double v0,
++                         double tol)
++    : f_(f), k1_(k1), k2_(k2), u0_(u0), v0_(v0), tol_(tol) {}
+ 
+ /* ************************************************************************* */
+ Matrix3 Cal3Bundler::K() const {
+@@ -94,21 +94,24 @@ Point2 Cal3Bundler::uncalibrate(const Po
+ }
+ 
+ /* ************************************************************************* */
+-Point2 Cal3Bundler::calibrate(const Point2& pi, const double tol) const {
++Point2 Cal3Bundler::calibrate(const Point2& pi,
++                              OptionalJacobian<2, 3> Dcal,
++                              OptionalJacobian<2, 2> Dp) const {
+   // Copied from Cal3DS2 :-(
+   // but specialized with k1,k2 non-zero only and fx=fy and s=0
+-  const Point2 invKPi((pi.x() - u0_)/f_, (pi.y() - v0_)/f_);
++  double x = (pi.x() - u0_)/f_, y = (pi.y() - v0_)/f_;
++  const Point2 invKPi(x, y);
+ 
+   // initialize by ignoring the distortion at all, might be problematic for pixels around boundary
+-  Point2 pn = invKPi;
++  Point2 pn(x, y);
+ 
+   // iterate until the uncalibrate is close to the actual pixel coordinate
+   const int maxIterations = 10;
+   int iteration;
+   for (iteration = 0; iteration < maxIterations; ++iteration) {
+-    if (distance2(uncalibrate(pn), pi) <= tol)
++    if (distance2(uncalibrate(pn), pi) <= tol_)
+       break;
+-    const double x = pn.x(), y = pn.y(), xx = x * x, yy = y * y;
++    const double px = pn.x(), py = pn.y(), xx = px * px, yy = py * py;
+     const double rr = xx + yy;
+     const double g = (1 + k1_ * rr + k2_ * rr * rr);
+     pn = invKPi / g;
+@@ -118,6 +121,25 @@ Point2 Cal3Bundler::calibrate(const Poin
+     throw std::runtime_error(
+         "Cal3Bundler::calibrate fails to converge. need a better initialization");
+ 
++  // We make use of the Implicit Function Theorem to compute the Jacobians from uncalibrate
++  // Given f(pi, pn) = uncalibrate(pn) - pi, and g(pi) = calibrate, we can easily compute the Jacobians
++  // df/pi = -I (pn and pi are independent args)
++  // Dcal = -inv(H_uncal_pn) * df/pi = -inv(H_uncal_pn) * (-I) = inv(H_uncal_pn)
++  // Dp = -inv(H_uncal_pn) * df/K = -inv(H_uncal_pn) * H_uncal_K
++  Matrix23 H_uncal_K;
++  Matrix22 H_uncal_pn, H_uncal_pn_inv;
++
++  if (Dcal || Dp) {
++    // Compute uncalibrate Jacobians
++    uncalibrate(pn, Dcal ? &H_uncal_K : nullptr, H_uncal_pn);
++
++    H_uncal_pn_inv = H_uncal_pn.inverse();
++
++    if (Dp) *Dp = H_uncal_pn_inv;
++    if (Dcal) *Dcal = -H_uncal_pn_inv * H_uncal_K;
++
++  }
++
+   return pn;
+ }
+ 
+--- gtsam-4.1.0.orig/gtsam/geometry/Cal3Bundler.h
++++ gtsam-4.1.0/gtsam/geometry/Cal3Bundler.h
+@@ -33,6 +33,7 @@ private:
+   double f_; ///< focal length
+   double k1_, k2_; ///< radial distortion
+   double u0_, v0_; ///< image center, not a parameter to be optimized but a constant
++  double tol_; ///< tolerance value when calibrating
+ 
+ public:
+ 
+@@ -51,8 +52,10 @@ public:
+    *  @param k2 second radial distortion coefficient (quartic)
+    *  @param u0 optional image center (default 0), considered a constant
+    *  @param v0 optional image center (default 0), considered a constant
++   *  @param tol optional calibration tolerance value
+    */
+-  Cal3Bundler(double f, double k1, double k2, double u0 = 0, double v0 = 0);
++  Cal3Bundler(double f, double k1, double k2, double u0 = 0, double v0 = 0,
++              double tol = 1e-5);
+ 
+   virtual ~Cal3Bundler() {}
+ 
+@@ -117,8 +120,17 @@ public:
+   Point2 uncalibrate(const Point2& p, OptionalJacobian<2, 3> Dcal = boost::none,
+       OptionalJacobian<2, 2> Dp = boost::none) const;
+ 
+-  /// Convert a pixel coordinate to ideal coordinate
+-  Point2 calibrate(const Point2& pi, const double tol = 1e-5) const;
++  /**
++   * Convert a pixel coordinate to ideal coordinate xy
++   * @param p point in image coordinates
++   * @param tol optional tolerance threshold value for iterative minimization
++   * @param Dcal optional 2*3 Jacobian wrpt Cal3Bundler parameters
++   * @param Dp optional 2*2 Jacobian wrpt intrinsic coordinates
++   * @return point in intrinsic coordinates
++   */
++  Point2 calibrate(const Point2& pi,
++                   OptionalJacobian<2, 3> Dcal = boost::none,
++                   OptionalJacobian<2, 2> Dp = boost::none) const;
+ 
+   /// @deprecated might be removed in next release, use uncalibrate
+   Matrix2 D2d_intrinsic(const Point2& p) const;
+@@ -164,6 +176,7 @@ private:
+     ar & BOOST_SERIALIZATION_NVP(k2_);
+     ar & BOOST_SERIALIZATION_NVP(u0_);
+     ar & BOOST_SERIALIZATION_NVP(v0_);
++    ar & BOOST_SERIALIZATION_NVP(tol_);
+   }
+ 
+   /// @}
 --- gtsam-4.1.0.orig/gtsam/geometry/Point3.cpp
 +++ gtsam-4.1.0/gtsam/geometry/Point3.cpp
-@@ -75,6 +75,19 @@ double dot(const Point3 &p, const Point3
+@@ -75,6 +75,20 @@ double dot(const Point3 &p, const Point3
    return p.x() * q.x() + p.y() * q.y() + p.z() * q.z();
  }
  
 +Point3Pair mean(const std::vector<Point3Pair> &abPointPairs) {
 +  const size_t n = abPointPairs.size();
++  if (n == 0) throw std::invalid_argument("Point3::mean input Point3Pair vector is empty");
 +  Point3 aCentroid(0, 0, 0), bCentroid(0, 0, 0);
 +  for (const Point3Pair &abPair : abPointPairs) {
 +    aCentroid += abPair.first;
@@ -1642,13 +1751,14 @@ Last-Update: 2020-09-29
  
  namespace gtsam {
  
-@@ -58,6 +59,17 @@ GTSAM_EXPORT double dot(const Point3& p,
+@@ -58,6 +59,18 @@ GTSAM_EXPORT double dot(const Point3& p,
                          OptionalJacobian<1, 3> H_p = boost::none,
                          OptionalJacobian<1, 3> H_q = boost::none);
  
 +/// mean
 +template <class CONTAINER>
 +GTSAM_EXPORT Point3 mean(const CONTAINER& points) {
++  if (points.size() == 0) throw std::invalid_argument("Point3::mean input container is empty");
 +  Point3 sum(0, 0, 0);
 +  sum = std::accumulate(points.begin(), points.end(), sum);
 +  return sum / points.size();
@@ -2062,6 +2172,68 @@ Last-Update: 2020-09-29
    }
  
    /* ************************************************************************* */
+--- gtsam-4.1.0.orig/gtsam/geometry/tests/testCal3Bundler.cpp
++++ gtsam-4.1.0/gtsam/geometry/tests/testCal3Bundler.cpp
+@@ -52,12 +52,14 @@ TEST( Cal3Bundler, calibrate )
+   Point2 pn(0.5, 0.5);
+   Point2 pi = K.uncalibrate(pn);
+   Point2 pn_hat = K.calibrate(pi);
+-  CHECK( traits<Point2>::Equals(pn, pn_hat, 1e-5));
++  CHECK(traits<Point2>::Equals(pn, pn_hat, 1e-5));
+ }
+ 
+ /* ************************************************************************* */
+ Point2 uncalibrate_(const Cal3Bundler& k, const Point2& pt) { return k.uncalibrate(pt); }
+ 
++Point2 calibrate_(const Cal3Bundler& k, const Point2& pt) { return k.calibrate(pt); }
++
+ /* ************************************************************************* */
+ TEST( Cal3Bundler, Duncalibrate)
+ {
+@@ -69,11 +71,20 @@ TEST( Cal3Bundler, Duncalibrate)
+   Matrix numerical2 = numericalDerivative22(uncalibrate_, K, p);
+   CHECK(assert_equal(numerical1,Dcal,1e-7));
+   CHECK(assert_equal(numerical2,Dp,1e-7));
+-  CHECK(assert_equal(numerical1,K.D2d_calibration(p),1e-7));
+-  CHECK(assert_equal(numerical2,K.D2d_intrinsic(p),1e-7));
+-  Matrix Dcombined(2,5);
+-  Dcombined << Dp, Dcal;
+-  CHECK(assert_equal(Dcombined,K.D2d_intrinsic_calibration(p),1e-7));
++}
++
++/* ************************************************************************* */
++TEST( Cal3Bundler, Dcalibrate)
++{
++  Matrix Dcal, Dp;
++  Point2 pn(0.5, 0.5);
++  Point2 pi = K.uncalibrate(pn);
++  Point2 actual = K.calibrate(pi, Dcal, Dp);
++  CHECK(assert_equal(pn, actual, 1e-7));
++  Matrix numerical1 = numericalDerivative21(calibrate_, K, pi);
++  Matrix numerical2 = numericalDerivative22(calibrate_, K, pi);
++  CHECK(assert_equal(numerical1,Dcal,1e-5));
++  CHECK(assert_equal(numerical2,Dp,1e-5));
+ }
+ 
+ /* ************************************************************************* */
+--- gtsam-4.1.0.orig/gtsam/geometry/tests/testPinholeCamera.cpp
++++ gtsam-4.1.0/gtsam/geometry/tests/testPinholeCamera.cpp
+@@ -337,6 +337,15 @@ TEST( PinholeCamera, range3) {
+ }
+ 
+ /* ************************************************************************* */
++TEST( PinholeCamera, Cal3Bundler) {
++  Cal3Bundler calibration;
++  Pose3 wTc;
++  PinholeCamera<Cal3Bundler> camera(wTc, calibration);
++  Point2 p(50, 100);
++  camera.backproject(p, 10);
++}
++
++/* ************************************************************************* */
+ int main() { TestResult tr; return TestRegistry::runAllTests(tr); }
+ /* ************************************************************************* */
+ 
 --- gtsam-4.1.0.orig/gtsam/geometry/tests/testPoint3.cpp
 +++ gtsam-4.1.0/gtsam/geometry/tests/testPoint3.cpp
 @@ -165,6 +165,26 @@ TEST (Point3, normalize) {
@@ -2381,15 +2553,15 @@ Last-Update: 2020-09-29
 -  // Standard constructors
 -  LieVector();
 -  LieVector(Vector v);
-+gtsam::IndexPairVector IndexPairSetAsArray(gtsam::IndexPairSet& set);
- 
+-
 -  // Standard interface
 -  Vector vector() const;
 -
 -  // Testable
 -  void print(string s) const;
 -  bool equals(const gtsam::LieVector& expected, double tol) const;
--
++gtsam::IndexPairVector IndexPairSetAsArray(gtsam::IndexPairSet& set);
+ 
 -  // Group
 -  static gtsam::LieVector identity();
 -  gtsam::LieVector inverse() const;
@@ -2541,7 +2713,24 @@ Last-Update: 2020-09-29
    Matrix AdjointMap() const;
    Vector Adjoint(Vector xi) const;
    static Matrix adjointMap_(Vector xi);
-@@ -1015,7 +983,7 @@ class Cal3Bundler {
+@@ -991,6 +959,7 @@ class Cal3Bundler {
+   // Standard Constructors
+   Cal3Bundler();
+   Cal3Bundler(double fx, double k1, double k2, double u0, double v0);
++  Cal3Bundler(double fx, double k1, double k2, double u0, double v0, double tol);
+ 
+   // Testable
+   void print(string s) const;
+@@ -1003,7 +972,7 @@ class Cal3Bundler {
+   Vector localCoordinates(const gtsam::Cal3Bundler& c) const;
+ 
+   // Action on Point2
+-  gtsam::Point2 calibrate(const gtsam::Point2& p, double tol) const;
++  gtsam::Point2 calibrate(const gtsam::Point2& p) const;
+   gtsam::Point2 uncalibrate(const gtsam::Point2& p) const;
+ 
+   // Standard Interface
+@@ -1015,7 +984,7 @@ class Cal3Bundler {
    double v0() const;
    Vector vector() const;
    Vector k() const;
@@ -2550,7 +2739,7 @@ Last-Update: 2020-09-29
  
    // enabling serialization functionality
    void serialize() const;
-@@ -1134,7 +1102,7 @@ gtsam::SimpleCamera simpleCamera(const M
+@@ -1134,10 +1103,10 @@ gtsam::SimpleCamera simpleCamera(const M
  // Some typedefs for common camera types
  // PinholeCameraCal3_S2 is the same as SimpleCamera above
  typedef gtsam::PinholeCamera<gtsam::Cal3_S2> PinholeCameraCal3_S2;
@@ -2558,8 +2747,12 @@ Last-Update: 2020-09-29
 +//TODO (Issue 237) due to lack of jacobians of Cal3DS2_Base::calibrate, PinholeCamera does not apply to Cal3DS2/Unified
  //typedef gtsam::PinholeCamera<gtsam::Cal3DS2> PinholeCameraCal3DS2;
  //typedef gtsam::PinholeCamera<gtsam::Cal3Unified> PinholeCameraCal3Unified;
- //typedef gtsam::PinholeCamera<gtsam::Cal3Bundler> PinholeCameraCal3Bundler;
-@@ -1330,7 +1298,7 @@ class SymbolicBayesTree {
+-//typedef gtsam::PinholeCamera<gtsam::Cal3Bundler> PinholeCameraCal3Bundler;
++typedef gtsam::PinholeCamera<gtsam::Cal3Bundler> PinholeCameraCal3Bundler;
+ 
+ #include <gtsam/geometry/StereoCamera.h>
+ class StereoCamera {
+@@ -1330,7 +1299,7 @@ class SymbolicBayesTree {
  // //  const std::list<derived_ptr>& children() const { return children_; }
  // //  derived_ptr parent() const { return parent_.lock(); }
  //
@@ -2568,7 +2761,7 @@ Last-Update: 2020-09-29
  // //  BayesNet<ConditionalType> shortcut(derived_ptr root, Eliminate function) const;
  // //  FactorGraph<FactorType> marginal(derived_ptr root, Eliminate function) const;
  // //  FactorGraph<FactorType> joint(derived_ptr C2, derived_ptr root, Eliminate function) const;
-@@ -2129,7 +2097,7 @@ virtual class NonlinearFactor {
+@@ -2129,7 +2098,7 @@ virtual class NonlinearFactor {
    bool active(const gtsam::Values& c) const;
    gtsam::GaussianFactor* linearize(const gtsam::Values& c) const;
    gtsam::NonlinearFactor* clone() const;
@@ -2577,7 +2770,7 @@ Last-Update: 2020-09-29
  };
  
  #include <gtsam/nonlinear/NonlinearFactor.h>
-@@ -2193,6 +2161,7 @@ class Values {
+@@ -2193,6 +2162,7 @@ class Values {
    void insert(size_t j, const gtsam::Cal3Bundler& cal3bundler);
    void insert(size_t j, const gtsam::EssentialMatrix& essential_matrix);
    void insert(size_t j, const gtsam::PinholeCameraCal3_S2& simple_camera);
@@ -2585,7 +2778,7 @@ Last-Update: 2020-09-29
    void insert(size_t j, const gtsam::imuBias::ConstantBias& constant_bias);
    void insert(size_t j, const gtsam::NavState& nav_state);
  
-@@ -2209,12 +2178,14 @@ class Values {
+@@ -2209,12 +2179,14 @@ class Values {
    void update(size_t j, const gtsam::Cal3DS2& cal3ds2);
    void update(size_t j, const gtsam::Cal3Bundler& cal3bundler);
    void update(size_t j, const gtsam::EssentialMatrix& essential_matrix);
@@ -2601,7 +2794,16 @@ Last-Update: 2020-09-29
    T at(size_t j);
  
    /// version for double
-@@ -2507,9 +2478,9 @@ class ISAM2 {
+@@ -2491,6 +2463,8 @@ class ISAM2Result {
+   size_t getVariablesRelinearized() const;
+   size_t getVariablesReeliminated() const;
+   size_t getCliques() const;
++  double getErrorBefore() const;
++  double getErrorAfter() const;
+ };
+ 
+ class ISAM2 {
+@@ -2507,9 +2481,9 @@ class ISAM2 {
    gtsam::ISAM2Result update(const gtsam::NonlinearFactorGraph& newFactors, const gtsam::Values& newTheta);
    gtsam::ISAM2Result update(const gtsam::NonlinearFactorGraph& newFactors, const gtsam::Values& newTheta, const gtsam::FactorIndices& removeFactorIndices);
    gtsam::ISAM2Result update(const gtsam::NonlinearFactorGraph& newFactors, const gtsam::Values& newTheta, const gtsam::FactorIndices& removeFactorIndices, const gtsam::KeyGroupMap& constrainedKeys);
@@ -2614,7 +2816,7 @@ Last-Update: 2020-09-29
  
    gtsam::Values getLinearizationPoint() const;
    gtsam::Values calculateEstimate() const;
-@@ -2641,8 +2612,7 @@ class BearingRange {
+@@ -2641,8 +2615,7 @@ class BearingRange {
    BearingRange(const BEARING& b, const RANGE& r);
    BEARING bearing() const;
    RANGE range() const;
@@ -2624,7 +2826,7 @@ Last-Update: 2020-09-29
    static BEARING MeasureBearing(const POSE& pose, const POINT& point);
    static RANGE MeasureRange(const POSE& pose, const POINT& point);
    void print(string s) const;
-@@ -2698,7 +2668,7 @@ virtual class GeneralSFMFactor : gtsam::
+@@ -2698,7 +2671,7 @@ virtual class GeneralSFMFactor : gtsam::
    gtsam::Point2 measured() const;
  };
  typedef gtsam::GeneralSFMFactor<gtsam::PinholeCameraCal3_S2, gtsam::Point3> GeneralSFMFactorCal3_S2;
@@ -2633,7 +2835,7 @@ Last-Update: 2020-09-29
  //typedef gtsam::GeneralSFMFactor<gtsam::PinholeCameraCal3DS2, gtsam::Point3> GeneralSFMFactorCal3DS2;
  
  template<CALIBRATION = {gtsam::Cal3_S2}>
-@@ -2787,6 +2757,7 @@ virtual class EssentialMatrixFactor : gt
+@@ -2787,6 +2760,7 @@ virtual class EssentialMatrixFactor : gt
  
  #include <gtsam/slam/dataset.h>
  class SfmTrack {
@@ -2641,7 +2843,13 @@ Last-Update: 2020-09-29
    size_t number_measurements() const;
    pair<size_t, gtsam::Point2> measurement(size_t idx) const;
    pair<size_t, size_t> siftIndex(size_t idx) const;
-@@ -2800,7 +2771,10 @@ class SfmData {
+@@ -2795,12 +2769,14 @@ class SfmTrack {
+ class SfmData {
+   size_t number_cameras() const;
+   size_t number_tracks() const;
+-  //TODO(Varun) Need to fix issue #237 first before this can work
+-  // gtsam::PinholeCamera<gtsam::Cal3Bundler> camera(size_t idx) const;
++  gtsam::PinholeCamera<gtsam::Cal3Bundler> camera(size_t idx) const;
    gtsam::SfmTrack track(size_t idx) const;
  };
  
@@ -2653,7 +2861,7 @@ Last-Update: 2020-09-29
  pair<gtsam::NonlinearFactorGraph*, gtsam::Values*> load2D(string filename,
      gtsam::noiseModel::Diagonal* model, int maxIndex, bool addNoise, bool smart);
  pair<gtsam::NonlinearFactorGraph*, gtsam::Values*> load2D(string filename,
-@@ -2914,6 +2888,13 @@ class BinaryMeasurement {
+@@ -2914,6 +2890,13 @@ class BinaryMeasurement {
  typedef gtsam::BinaryMeasurement<gtsam::Unit3> BinaryMeasurementUnit3;
  typedef gtsam::BinaryMeasurement<gtsam::Rot3> BinaryMeasurementRot3;
  
@@ -2667,7 +2875,7 @@ Last-Update: 2020-09-29
  #include <gtsam/sfm/ShonanAveraging.h>
  
  // TODO(frank): copy/pasta below until we have integer template paremeters in wrap!
-@@ -2925,6 +2906,7 @@ class ShonanAveragingParameters2 {
+@@ -2925,6 +2908,7 @@ class ShonanAveragingParameters2 {
    void setOptimalityThreshold(double value);
    double getOptimalityThreshold() const;
    void setAnchor(size_t index, const gtsam::Rot2& value);
@@ -2675,7 +2883,7 @@ Last-Update: 2020-09-29
    void setAnchorWeight(double value);
    double getAnchorWeight() const;
    void setKarcherWeight(double value);
-@@ -2940,6 +2922,7 @@ class ShonanAveragingParameters3 {
+@@ -2940,6 +2924,7 @@ class ShonanAveragingParameters3 {
    void setOptimalityThreshold(double value);
    double getOptimalityThreshold() const;
    void setAnchor(size_t index, const gtsam::Rot3& value);
@@ -2683,7 +2891,7 @@ Last-Update: 2020-09-29
    void setAnchorWeight(double value);
    double getAnchorWeight() const;
    void setKarcherWeight(double value);
-@@ -3033,6 +3016,16 @@ class ShonanAveraging3 {
+@@ -3033,6 +3018,16 @@ class ShonanAveraging3 {
    pair<gtsam::Values, double> run(const gtsam::Values& initial, size_t min_p, size_t max_p) const;
  };
  
@@ -2824,6 +3032,17 @@ Last-Update: 2020-09-29
  
    EXPECT(os.str() == expected);
  }
+--- gtsam-4.1.0.orig/gtsam/nonlinear/ISAM2Result.h
++++ gtsam-4.1.0/gtsam/nonlinear/ISAM2Result.h
+@@ -176,6 +176,8 @@ struct ISAM2Result {
+   size_t getVariablesRelinearized() const { return variablesRelinearized; }
+   size_t getVariablesReeliminated() const { return variablesReeliminated; }
+   size_t getCliques() const { return cliques; }
++  double getErrorBefore() const { return errorBefore ? *errorBefore : std::nan(""); }
++  double getErrorAfter() const { return errorAfter ? *errorAfter : std::nan(""); }
+ };
+ 
+ }  // namespace gtsam
 --- gtsam-4.1.0.orig/gtsam/nonlinear/NonlinearFactorGraph.cpp
 +++ gtsam-4.1.0/gtsam/nonlinear/NonlinearFactorGraph.cpp
 @@ -205,42 +205,49 @@ void NonlinearFactorGraph::saveGraph(std

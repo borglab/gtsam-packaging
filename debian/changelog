@@ -1,10 +1,40 @@
-gtsam (4.1.0-1ubuntu1~16.gbp02b2f4) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~17.gbp1ef9b3) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @1ef9b398b3ef6d55145cb27f7597a4d76fe767a4 **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @02b2f43fa9f637d9b7b2cbc39cd87901e3c98640 **
 
   * modified changelog for distro focal
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Tue, 29 Sep 2020 03:07:11 +0000
+  [ Varun Agrawal ]
+  * ISAM2 helper methods and wrapper to evaluate nonlinear error
+  * added calibrate with jacobians for Cal3Bundler
+  * combine the calibrate functions into one
+  * put the jacobians at the end so that the calibrate function can be wrapped
+  * make tolerance as a constructor param
+  * update calibrate in wrapper
+
+  [ alexma3312 ]
+  * Throw an exception when n=0 .
+
+  [ Bernd Pfrommer ]
+  * commit of final snapshot version number update
+
+  [ Varun Agrawal ]
+  * use implicit function theorem to compute jacobians of Cal3Bundler::calibrate
+  * added test for Cal3Bundler::calibrate Jacobians1
+  * make Cal3Bundler wrapper constructor backwards compatible
+  * fixed sized matrices and minor improvements
+
+  [ alexma3312 ]
+  * Modify error message to be more descriptive.
+
+  [ Varun Agrawal ]
+  * compute inverse only once
+  * wrap PinholeCameraCal3Bundler
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Wed, 30 Sep 2020 03:05:54 +0000
 
 gtsam (4.1.0-1ubuntu1~15.gbp0d069e) focal; urgency=medium
 
