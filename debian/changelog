@@ -1,3 +1,12 @@
+gtsam (4.1.0-1ubuntu1~22.gbp9d67d9) bionic; urgency=medium
+
+  ** SNAPSHOT build @9d67d95cab3ab85a6dd6c1e08ac63bd79280371c **
+
+  * updated changelog and patch files for snapshot 4.1.0-1ubuntu1~21.gbpd9afa2
+  * modified changelog for distro xenial
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Fri, 02 Oct 2020 03:06:37 +0000
+
 gtsam (4.1.0-1ubuntu1~21.gbpd9afa2) xenial; urgency=medium
 
   ** SNAPSHOT build @d9afa2d5fa52b845780a37800cf5a964dc4952bc **
