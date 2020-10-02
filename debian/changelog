@@ -1,10 +1,19 @@
-gtsam (4.1.0-1ubuntu1~20.gbp611d7b) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~21.gbpd9afa2) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @d9afa2d5fa52b845780a37800cf5a964dc4952bc **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @611d7b0c21c962840f5db54a9d5e65ec2ea0182a **
 
   * modified changelog for distro focal
+  * commit of final snapshot version number update
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Wed, 30 Sep 2020 03:07:24 +0000
+  [ Frank Dellaert ]
+  * Changed name to avoid template confusion in VC 2016
+  * Clean up code and tests and use "means"
+  * Update Point3.h
+
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Fri, 02 Oct 2020 03:06:01 +0000
 
 gtsam (4.1.0-1ubuntu1~19.gbp177edc) focal; urgency=medium
 

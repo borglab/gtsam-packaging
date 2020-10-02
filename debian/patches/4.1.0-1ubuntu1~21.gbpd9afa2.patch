@@ -5,41 +5,20 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~17.gbp1ef9b3) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~21.gbpd9afa2) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @1ef9b398b3ef6d55145cb27f7597a4d76fe767a4 **
+   ** SNAPSHOT build @d9afa2d5fa52b845780a37800cf5a964dc4952bc **
  .
    [ Bernd Pfrommer ]
-   ** SNAPSHOT build @02b2f43fa9f637d9b7b2cbc39cd87901e3c98640 **
+   ** SNAPSHOT build @611d7b0c21c962840f5db54a9d5e65ec2ea0182a **
  .
    * modified changelog for distro focal
- .
-   [ Varun Agrawal ]
-   * ISAM2 helper methods and wrapper to evaluate nonlinear error
-   * added calibrate with jacobians for Cal3Bundler
-   * combine the calibrate functions into one
-   * put the jacobians at the end so that the calibrate function can be wrapped
-   * make tolerance as a constructor param
-   * update calibrate in wrapper
- .
-   [ alexma3312 ]
-   * Throw an exception when n=0 .
- .
-   [ Bernd Pfrommer ]
    * commit of final snapshot version number update
  .
-   [ Varun Agrawal ]
-   * use implicit function theorem to compute jacobians of Cal3Bundler::calibrate
-   * added test for Cal3Bundler::calibrate Jacobians1
-   * make Cal3Bundler wrapper constructor backwards compatible
-   * fixed sized matrices and minor improvements
- .
-   [ alexma3312 ]
-   * Modify error message to be more descriptive.
- .
-   [ Varun Agrawal ]
-   * compute inverse only once
-   * wrap PinholeCameraCal3Bundler
+   [ Frank Dellaert ]
+   * Changed name to avoid template confusion in VC 2016
+   * Clean up code and tests and use "means"
+   * Update Point3.h
 Author: Bernd Pfrommer <bernd.pfrommer@gmail.com>
 
 ---
@@ -53,7 +32,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2020-09-30
+Last-Update: 2020-10-02
 
 --- gtsam-4.1.0.orig/CMakeLists.txt
 +++ gtsam-4.1.0/CMakeLists.txt
@@ -1720,22 +1699,20 @@ Last-Update: 2020-09-30
    /// @}
 --- gtsam-4.1.0.orig/gtsam/geometry/Point3.cpp
 +++ gtsam-4.1.0/gtsam/geometry/Point3.cpp
-@@ -75,6 +75,20 @@ double dot(const Point3 &p, const Point3
+@@ -75,6 +75,18 @@ double dot(const Point3 &p, const Point3
    return p.x() * q.x() + p.y() * q.y() + p.z() * q.z();
  }
  
-+Point3Pair mean(const std::vector<Point3Pair> &abPointPairs) {
++Point3Pair means(const std::vector<Point3Pair> &abPointPairs) {
 +  const size_t n = abPointPairs.size();
 +  if (n == 0) throw std::invalid_argument("Point3::mean input Point3Pair vector is empty");
-+  Point3 aCentroid(0, 0, 0), bCentroid(0, 0, 0);
++  Point3 aSum(0, 0, 0), bSum(0, 0, 0);
 +  for (const Point3Pair &abPair : abPointPairs) {
-+    aCentroid += abPair.first;
-+    bCentroid += abPair.second;
++    aSum += abPair.first;
++    bSum += abPair.second;
 +  }
 +  const double f = 1.0 / n;
-+  aCentroid *= f;
-+  bCentroid *= f;
-+  return make_pair(aCentroid, bCentroid);
++  return {aSum * f, bSum * f};
 +}
 +
  /* ************************************************************************* */
@@ -1764,15 +1741,29 @@ Last-Update: 2020-09-30
 +  return sum / points.size();
 +}
 +
-+/// mean of Point3 pair 
-+GTSAM_EXPORT Point3Pair mean(const std::vector<Point3Pair>& abPointPairs);
++/// Calculate the two means of a set of Point3 pairs
++GTSAM_EXPORT Point3Pair means(const std::vector<Point3Pair> &abPointPairs);
 +
  template <typename A1, typename A2>
  struct Range;
  
 --- gtsam-4.1.0.orig/gtsam/geometry/Pose3.cpp
 +++ gtsam-4.1.0/gtsam/geometry/Pose3.cpp
-@@ -190,15 +190,7 @@ Vector6 Pose3::ChartAtOrigin::Local(cons
+@@ -24,10 +24,11 @@
+ #include <limits>
+ #include <string>
+ 
+-using namespace std;
+-
+ namespace gtsam {
+ 
++using std::vector;
++using Point3Pairs = vector<Point3Pair>;
++
+ /** instantiate concept checks */
+ GTSAM_CONCEPT_POSE_INST(Pose3);
+ 
+@@ -190,15 +191,7 @@ Vector6 Pose3::ChartAtOrigin::Local(cons
  }
  
  /* ************************************************************************* */
@@ -1789,27 +1780,39 @@ Last-Update: 2020-09-30
    const auto w = xi.head<3>();
    const auto v = xi.tail<3>();
    const Matrix3 V = skewSymmetric(v);
-@@ -220,7 +212,7 @@ static Matrix3 computeQforExpmapDerivati
+@@ -220,18 +213,20 @@ static Matrix3 computeQforExpmapDerivati
  #else
    // The closed-form formula in Barfoot14tro eq. (102)
    double phi = w.norm();
 -  if (std::abs(phi)>1e-5) {
-+  if (std::abs(phi)>nearZeroThreshold) {
-     const double sinPhi = sin(phi), cosPhi = cos(phi);
-     const double phi2 = phi * phi, phi3 = phi2 * phi, phi4 = phi3 * phi, phi5 = phi4 * phi;
+-    const double sinPhi = sin(phi), cosPhi = cos(phi);
+-    const double phi2 = phi * phi, phi3 = phi2 * phi, phi4 = phi3 * phi, phi5 = phi4 * phi;
++  const Matrix3 WVW = W * V * W;
++  if (std::abs(phi) > nearZeroThreshold) {
++    const double s = sin(phi), c = cos(phi);
++    const double phi2 = phi * phi, phi3 = phi2 * phi, phi4 = phi3 * phi,
++                 phi5 = phi4 * phi;
      // Invert the sign of odd-order terms to have the right Jacobian
-@@ -230,8 +222,8 @@ static Matrix3 computeQforExpmapDerivati
-   }
-   else {
-     Q = -0.5*V + 1./6.*(W*V + V*W - W*V*W)
+-    Q = -0.5*V + (phi-sinPhi)/phi3*(W*V + V*W - W*V*W)
+-            + (1-phi2/2-cosPhi)/phi4*(W*W*V + V*W*W - 3*W*V*W)
+-            - 0.5*((1-phi2/2-cosPhi)/phi4 - 3*(phi-sinPhi-phi3/6.)/phi5)*(W*V*W*W + W*W*V*W);
+-  }
+-  else {
+-    Q = -0.5*V + 1./6.*(W*V + V*W - W*V*W)
 -        + 1./24.*(W*W*V + V*W*W - 3*W*V*W)
 -        - 0.5*(1./24. + 3./120.)*(W*V*W*W + W*W*V*W);
-+        - 1./24.*(W*W*V + V*W*W - 3*W*V*W)
-+        + 1./120.*(W*V*W*W + W*W*V*W);
++    Q = -0.5 * V + (phi - s) / phi3 * (W * V + V * W - WVW) +
++        (1 - phi2 / 2 - c) / phi4 * (W * W * V + V * W * W - 3 * WVW) -
++        0.5 * ((1 - phi2 / 2 - c) / phi4 - 3 * (phi - s - phi3 / 6.) / phi5) *
++            (WVW * W + W * WVW);
++  } else {
++    Q = -0.5 * V + 1. / 6. * (W * V + V * W - WVW) -
++        1. / 24. * (W * W * V + V * W * W - 3 * WVW) +
++        1. / 120. * (WVW * W + W * WVW);
    }
  #endif
  
-@@ -242,7 +234,7 @@ static Matrix3 computeQforExpmapDerivati
+@@ -242,7 +237,7 @@ static Matrix3 computeQforExpmapDerivati
  Matrix6 Pose3::ExpmapDerivative(const Vector6& xi) {
    const Vector3 w = xi.head<3>();
    const Matrix3 Jw = Rot3::ExpmapDerivative(w);
@@ -1818,7 +1821,7 @@ Last-Update: 2020-09-30
    Matrix6 J;
    J << Jw, Z_3x3, Q, Jw;
    return J;
-@@ -253,7 +245,7 @@ Matrix6 Pose3::LogmapDerivative(const Po
+@@ -253,7 +248,7 @@ Matrix6 Pose3::LogmapDerivative(const Po
    const Vector6 xi = Logmap(pose);
    const Vector3 w = xi.head<3>();
    const Matrix3 Jw = Rot3::LogmapDerivative(w);
@@ -1827,6 +1830,61 @@ Last-Update: 2020-09-30
    const Matrix3 Q2 = -Jw*Q*Jw;
    Matrix6 J;
    J << Jw, Z_3x3, Q2, Jw;
+@@ -389,39 +384,33 @@ Unit3 Pose3::bearing(const Pose3& pose,
+ }
+ 
+ /* ************************************************************************* */
+-boost::optional<Pose3> Pose3::Align(const std::vector<Point3Pair>& abPointPairs) {
++boost::optional<Pose3> Pose3::Align(const Point3Pairs &abPointPairs) {
+   const size_t n = abPointPairs.size();
+-  if (n < 3)
+-    return boost::none;  // we need at least three pairs
++  if (n < 3) {
++    return boost::none; // we need at least three pairs
++  }
+ 
+   // calculate centroids
+-  Point3 aCentroid(0,0,0), bCentroid(0,0,0);
+-  for(const Point3Pair& abPair: abPointPairs) {
+-    aCentroid += abPair.first;
+-    bCentroid += abPair.second;
+-  }
+-  double f = 1.0 / n;
+-  aCentroid *= f;
+-  bCentroid *= f;
++  const auto centroids = means(abPointPairs);
+ 
+   // Add to form H matrix
+   Matrix3 H = Z_3x3;
+-  for(const Point3Pair& abPair: abPointPairs) {
+-    Point3 da = abPair.first - aCentroid;
+-    Point3 db = abPair.second - bCentroid;
++  for (const Point3Pair &abPair : abPointPairs) {
++    const Point3 da = abPair.first - centroids.first;
++    const Point3 db = abPair.second - centroids.second;
+     H += da * db.transpose();
+-    }
++  }
+ 
+   // ClosestTo finds rotation matrix closest to H in Frobenius sense
+-  Rot3 aRb = Rot3::ClosestTo(H);
+-  Point3 aTb = Point3(aCentroid) - aRb * Point3(bCentroid);
++  const Rot3 aRb = Rot3::ClosestTo(H);
++  const Point3 aTb = centroids.first - aRb * centroids.second;
+   return Pose3(aRb, aTb);
+ }
+ 
+-boost::optional<Pose3> align(const vector<Point3Pair>& baPointPairs) {
+-  vector<Point3Pair> abPointPairs;
+-  for (const Point3Pair& baPair: baPointPairs) {
+-    abPointPairs.push_back(make_pair(baPair.second, baPair.first));
++boost::optional<Pose3> align(const Point3Pairs &baPointPairs) {
++  Point3Pairs abPointPairs;
++  for (const Point3Pair &baPair : baPointPairs) {
++    abPointPairs.emplace_back(baPair.second, baPair.first);
+   }
+   return Pose3::Align(abPointPairs);
+ }
 --- gtsam-4.1.0.orig/gtsam/geometry/Pose3.h
 +++ gtsam-4.1.0/gtsam/geometry/Pose3.h
 @@ -181,6 +181,18 @@ public:
@@ -2241,22 +2299,22 @@ Last-Update: 2020-09-30
  
  //*************************************************************************
 +TEST(Point3, mean) {
-+  Point3 expected_a_mean(2, 2, 2);
++  Point3 expected(2, 2, 2);
 +  Point3 a1(0, 0, 0), a2(1, 2, 3), a3(5, 4, 3);
 +  std::vector<Point3> a_points{a1, a2, a3};
-+  Point3 actual_a_mean = mean(a_points);
-+  EXPECT(assert_equal(expected_a_mean, actual_a_mean));
++  Point3 actual = mean(a_points);
++  EXPECT(assert_equal(expected, actual));
 +}
 +
 +TEST(Point3, mean_pair) {
 +  Point3 a_mean(2, 2, 2), b_mean(-1, 1, 0);
-+  Point3Pair expected_mean = std::make_pair(a_mean, b_mean);
++  Point3Pair expected = std::make_pair(a_mean, b_mean);
 +  Point3 a1(0, 0, 0), a2(1, 2, 3), a3(5, 4, 3);
 +  Point3 b1(-1, 0, 0), b2(-2, 4, 0), b3(0, -1, 0);
-+  std::vector<Point3Pair> point_pairs{{a1,b1},{a2,b2},{a3,b3}};
-+  Point3Pair actual_mean = mean(point_pairs);
-+  EXPECT(assert_equal(expected_mean.first, actual_mean.first));
-+  EXPECT(assert_equal(expected_mean.second, actual_mean.second));
++  std::vector<Point3Pair> point_pairs{{a1, b1}, {a2, b2}, {a3, b3}};
++  Point3Pair actual = means(point_pairs);
++  EXPECT(assert_equal(expected.first, actual.first));
++  EXPECT(assert_equal(expected.second, actual.second));
 +}
 +
 +//*************************************************************************
@@ -4207,7 +4265,7 @@ Last-Update: 2020-09-30
                                                  const std::string &tag) {
 --- gtsam-4.1.0.orig/gtsam_unstable/geometry/Similarity3.cpp
 +++ gtsam-4.1.0/gtsam_unstable/geometry/Similarity3.cpp
-@@ -19,9 +19,61 @@
+@@ -19,9 +19,68 @@
  
  #include <gtsam/geometry/Pose3.h>
  #include <gtsam/base/Manifold.h>
@@ -4215,10 +4273,14 @@ Last-Update: 2020-09-30
  
  namespace gtsam {
  
++using std::vector;
++using PointPairs = vector<Point3Pair>;
++
 +namespace {
 +/// Subtract centroids from point pairs.
-+static std::vector<Point3Pair> subtractCentroids(const std::vector<Point3Pair>& abPointPairs, const Point3Pair& centroids) {
-+  std::vector<Point3Pair> d_abPointPairs;
++static PointPairs subtractCentroids(const PointPairs &abPointPairs,
++                                    const Point3Pair &centroids) {
++  PointPairs d_abPointPairs;
 +  for (const Point3Pair& abPair : abPointPairs) {
 +    Point3 da = abPair.first - centroids.first;
 +    Point3 db = abPair.second - centroids.second;
@@ -4228,7 +4290,8 @@ Last-Update: 2020-09-30
 +}
 +
 +/// Form inner products x and y and calculate scale.
-+static const double calculateScale(const std::vector<Point3Pair>& d_abPointPairs, const Rot3& aRb) {
++static const double calculateScale(const PointPairs &d_abPointPairs,
++                                   const Rot3 &aRb) {
 +  double x = 0, y = 0;
 +  Point3 da, db;
 +  for (const Point3Pair& d_abPair : d_abPointPairs) {
@@ -4242,7 +4305,7 @@ Last-Update: 2020-09-30
 +}
 +
 +/// Form outer product H.
-+static Matrix3 calculateH(const std::vector<Point3Pair>& d_abPointPairs) {
++static Matrix3 calculateH(const PointPairs &d_abPointPairs) {
 +  Matrix3 H = Z_3x3;
 +  for (const Point3Pair& d_abPair : d_abPointPairs) {
 +    H += d_abPair.first * d_abPair.second.transpose();
@@ -4251,7 +4314,8 @@ Last-Update: 2020-09-30
 +}
 +
 +/// This method estimates the similarity transform from differences point pairs, given a known or estimated rotation and point centroids.
-+static Similarity3 align(const std::vector<Point3Pair>& d_abPointPairs, const Rot3& aRb, const Point3Pair& centroids) {
++static Similarity3 align(const PointPairs &d_abPointPairs, const Rot3 &aRb,
++                         const Point3Pair &centroids) {
 +  const double s = calculateScale(d_abPointPairs, aRb);
 +  const Point3 aTb = (centroids.first - s * (aRb * centroids.second)) / s;
 +  return Similarity3(aRb, aTb, s);
@@ -4259,8 +4323,9 @@ Last-Update: 2020-09-30
 +
 +/// This method estimates the similarity transform from point pairs, given a known or estimated rotation.
 +// Refer to: http://www5.informatik.uni-erlangen.de/Forschung/Publikationen/2005/Zinsser05-PSR.pdf Chapter 3
-+static Similarity3 alignGivenR(const std::vector<Point3Pair>& abPointPairs, const Rot3& aRb) {
-+  auto centroids = mean(abPointPairs);
++static Similarity3 alignGivenR(const PointPairs &abPointPairs,
++                               const Rot3 &aRb) {
++  auto centroids = means(abPointPairs);
 +  auto d_abPointPairs = subtractCentroids(abPointPairs, centroids);
 +  return align(d_abPointPairs, aRb, centroids);
 +}
@@ -4269,7 +4334,7 @@ Last-Update: 2020-09-30
  Similarity3::Similarity3() :
      t_(0,0,0), s_(1) {
  }
-@@ -54,15 +106,15 @@ bool Similarity3::operator==(const Simil
+@@ -54,15 +113,15 @@ bool Similarity3::operator==(const Simil
  void Similarity3::print(const std::string& s) const {
    std::cout << std::endl;
    std::cout << s;
@@ -4289,7 +4354,7 @@ Last-Update: 2020-09-30
  }
  
  Similarity3 Similarity3::inverse() const {
-@@ -85,10 +137,47 @@ Point3 Similarity3::transformFrom(const
+@@ -85,11 +144,51 @@ Point3 Similarity3::transformFrom(const
    return s_ * q;
  }
  
@@ -4303,10 +4368,13 @@ Last-Update: 2020-09-30
    return transformFrom(p);
  }
  
-+Similarity3 Similarity3::Align(const std::vector<Point3Pair>& abPointPairs) {
-+  // Refer to: http://www5.informatik.uni-erlangen.de/Forschung/Publikationen/2005/Zinsser05-PSR.pdf Chapter 3
-+  if (abPointPairs.size() < 3) throw std::runtime_error("input should have at least 3 pairs of points");
-+  auto centroids = mean(abPointPairs);
+-Matrix4 Similarity3::wedge(const Vector7& xi) {
++Similarity3 Similarity3::Align(const PointPairs &abPointPairs) {
++  // Refer to Chapter 3 of
++  // http://www5.informatik.uni-erlangen.de/Forschung/Publikationen/2005/Zinsser05-PSR.pdf
++  if (abPointPairs.size() < 3)
++    throw std::runtime_error("input should have at least 3 pairs of points");
++  auto centroids = means(abPointPairs);
 +  auto d_abPointPairs = subtractCentroids(abPointPairs, centroids);
 +  Matrix3 H = calculateH(d_abPointPairs);
 +  // ClosestTo finds rotation matrix closest to H in Frobenius sense
@@ -4314,17 +4382,18 @@ Last-Update: 2020-09-30
 +  return align(d_abPointPairs, aRb, centroids);
 +}
 +
-+Similarity3 Similarity3::Align(const std::vector<Pose3Pair>& abPosePairs) {
++Similarity3 Similarity3::Align(const vector<Pose3Pair> &abPosePairs) {
 +  const size_t n = abPosePairs.size();
-+  if (n < 2) throw std::runtime_error("input should have at least 2 pairs of poses");
++  if (n < 2)
++    throw std::runtime_error("input should have at least 2 pairs of poses");
 +
 +  // calculate rotation
 +  vector<Rot3> rotations;
-+  vector<Point3Pair> abPointPairs;
++  PointPairs abPointPairs;
 +  rotations.reserve(n);
 +  abPointPairs.reserve(n);
 +  Pose3 wTa, wTb;
-+  for (const Pose3Pair& abPair : abPosePairs) {
++  for (const Pose3Pair &abPair : abPosePairs) {
 +    std::tie(wTa, wTb) = abPair;
 +    rotations.emplace_back(wTa.rotation().compose(wTb.rotation().inverse()));
 +    abPointPairs.emplace_back(wTa.translation(), wTb.translation());
@@ -4334,9 +4403,27 @@ Last-Update: 2020-09-30
 +  return alignGivenR(abPointPairs, aRb);
 +}
 +
- Matrix4 Similarity3::wedge(const Vector7& xi) {
++Matrix4 Similarity3::wedge(const Vector7 &xi) {
    // http://www.ethaneade.org/latex2html/lie/node29.html
    const auto w = xi.head<3>();
+   const auto u = xi.segment<3>(3);
+@@ -128,12 +227,13 @@ Matrix3 Similarity3::GetV(Vector3 w, dou
+     W = 1.0 / 24.0 - theta2 / 720.0;
+   }
+   const double lambda2 = lambda * lambda, lambda3 = lambda2 * lambda;
++  const double expMinLambda = exp(-lambda);
+   double A, alpha = 0.0, beta, mu;
+   if (lambda2 > 1e-9) {
+-    A = (1.0 - exp(-lambda)) / lambda;
++    A = (1.0 - expMinLambda) / lambda;
+     alpha = 1.0 / (1.0 + theta2 / lambda2);
+-    beta = (exp(-lambda) - 1 + lambda) / lambda2;
+-    mu = (1 - lambda + (0.5 * lambda2) - exp(-lambda)) / lambda3;
++    beta = (expMinLambda - 1 + lambda) / lambda2;
++    mu = (1 - lambda + (0.5 * lambda2) - expMinLambda) / lambda3;
+   } else {
+     A = 1.0 - lambda / 2.0 + lambda2 / 6.0;
+     beta = 0.5 - lambda / 6.0 + lambda2 / 24.0 - lambda3 / 120.0;
 --- gtsam-4.1.0.orig/gtsam_unstable/geometry/Similarity3.h
 +++ gtsam-4.1.0/gtsam_unstable/geometry/Similarity3.h
 @@ -19,10 +19,12 @@
