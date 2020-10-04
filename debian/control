@@ -7,7 +7,9 @@ Build-Depends: cmake,
     debhelper (>=9),
     libboost-all-dev (>= 1.58),
     libeigen3-dev,
-    libtbb-dev
+    libtbb-dev,
+    libcpputest-dev,
+    libgeographic-dev
 Standards-Version: 4.0.0
 Homepage: https://github.com/borglab/gtsam
 
