@@ -10,7 +10,7 @@ Build-Depends: cmake,
     libtbb-dev,
     libcpputest-dev,
     libgeographic-dev
-Standards-Version: 4.0.0
+Standards-Version: 4.5.0
 Homepage: https://github.com/borglab/gtsam
 
 Package: libgtsam-dev
