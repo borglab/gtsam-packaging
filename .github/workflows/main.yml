@@ -27,5 +27,4 @@ jobs:
         with:
           fetch-depth: 0
       - name: build GTSAM ubuntu package
-        run: ./build_ubuntu/snapshot_script.bash -p ppa:my-ppa-username/my-gtsam-ppa-name -v ubuntu -b 4.1.0 -u https://github.com/borglab/gtsam.git -k <my_gpg_secret_key_fingerprint> -n "My Name"  -e my.email@wherever.org
-
+        run: ./build_ubuntu/snapshot_script.bash -p ppa:borglab/gtsam-develop -v ubuntu -b 4.1.0 -u https://github.com/borglab/gtsam.git -k 95C3A575ABC855CE7D271B2A5C288700CB82A210 -n "Borglab Builder"  -e borglab.launchpad@gmail.com
