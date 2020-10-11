@@ -175,6 +175,11 @@ do
 
     # update snapshot version, which will be used in the next iteration
     snap=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
+
+    # sleep for some time such that the previous ppa upload finishes
+    # otherwise the current one may overtake the previous one, and it
+    # gets rejected because of non-increasing sequence numbers
+    sleep 60
 done
 
 # keep the git hash of the point where we just took the snapshot
