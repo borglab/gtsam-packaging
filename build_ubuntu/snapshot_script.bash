@@ -23,12 +23,10 @@ usage() {
     echo " -n <username>. Username, e.g. \"My Name\" (in quotes!). This name"
     echo "    will be used in commit messages"
     echo " -e <email>. Email, e.g. user@foo.bar. Must be your github registered email"
-    echo " -t <token>. Token for writing to github repo."
-    echo " -a <actor>. github user name to use for auth when pushing"
 }
 
 OPTIND=1
-while getopts "h?v:p:b:u:k:n:e:t:a:" opt; do
+while getopts "h?v:p:b:u:k:n:e:" opt; do
     case "$opt" in
 	h|\?)
 	    usage
@@ -48,10 +46,6 @@ while getopts "h?v:p:b:u:k:n:e:t:a:" opt; do
 	   ;;
 	k) gpg_key=$OPTARG
 	   ;;
-	t) token=$OPTARG
-	   ;;
-	a) actor=$OPTARG
-	   ;;
     esac
 done
 
@@ -59,7 +53,7 @@ shift $((OPTIND-1))
 
 [ "${1:-}" = "--" ] && shift
 
-if [ -z ${vendor+x} ] || [ -z ${ppa+x} ] || [ -z ${snapshot_base+x} ] || [ -z ${upstream+x} ] || [ -z ${gpg_key+x} ] || [ -z ${user_name+x} ] || [ -z ${email+x} || [ -z ${token+x} ] || [ -z ${actor+x} ] ]; then
+if [ -z ${vendor+x} ] || [ -z ${ppa+x} ] || [ -z ${snapshot_base+x} ] || [ -z ${upstream+x} ] || [ -z ${gpg_key+x} ] || [ -z ${user_name+x} ] || [ -z ${email+x} ] ]; then
     echo " ERROR: missing command line parameter. All parameters must be present!"
     echo
     usage
@@ -201,6 +195,5 @@ git add $hash_store_file
 git commit -m "commit of final snapshot version number update"
 
 # finally, push the changes to the snapshot branch back home
-git config credential.helper '!f() { printf "%s\n" "username=$actor" "password=$token"; };f'
 git branch -r
 git push origin ${vendor}/snapshot
