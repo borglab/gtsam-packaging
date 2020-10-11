@@ -14,6 +14,8 @@ following steps:
 - creating a github packaging repo
 - setting up a secret GPG key for github and the Ubuntu PPA
 - setting the GPG key as a secret for the github repo
+- creating and setting a personal access token (PAT) for
+  pushing changes to the repo
 - creating a Ubuntu PPA and depositing the GPG key there
 - modifying your packaging repo and pushing it to github
 
@@ -50,13 +52,26 @@ The output will need to be cut-and-pasted (see next step)
 
 ### Deposit the secret GPG key on github
 
-Now go to your github GTSAM packaging repo (created in the first
+Go to your github GTSAM packaging repo (created in the first
 step), and create a "secret" under the repo. Note: do *not* deposit
 the key as a GPG key under your *user*, but add it as a secret to the
 particular GTSAM packaging repo created earlier, e.g.
 ``gtsam-packaging``.  There, create a secret called "GPG_PRIVATE_KEY"
 and cut and paste the armored key, including begin/end lines into the
 field below the secret.
+
+
+### Create a personal access token (PAT):
+
+In your github account go to your github account settings (not repo
+settings), and select "developer settings". Under "scopes" select
+"repo" (all of them) and "workflow". Create a personal access
+token (PAT). Cut and paste it somewhere safe right away - you cannot
+make it visible anymore later.
+
+Go to the packaging repo (e.g. ``gtsam-packaging``) and create a new
+secret there called ``ACTION_PUSH_PAT``. Paste the PAT created earlier
+in here and save.
 
 ### Set up a Ubuntu Personal Package Archive (PPA):
 
@@ -122,7 +137,12 @@ field below the secret.
 		git fetch --all
         git push origin 'refs/remotes/borglab/*:refs/heads/*'
 
-The last line will copy all branches of this repo over to yours, giving you a working setup.
+   The last line will copy all branches of this repo over to yours,
+   giving you a working setup.
+
+5. One more thing: push the adjusted workflow files:
+
+        git push origin master
 
 That's it! Now check your repo on github (under "Actions") to see that everything builds and uploads correctly.
 
