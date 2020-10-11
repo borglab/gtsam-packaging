@@ -1,10 +1,75 @@
-gtsam (4.1.0-1ubuntu1~24.gbp8736ad) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~25.gbp0f61de) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @0f61de0b61ce7a89bee8225bb312c7cab69b4985 **
+
+  [ Bernd Pfrommer ]
   ** SNAPSHOT build @8736ade7a0c6fa64f4d48fb1f6758ac5c9c0d313 **
 
   * modified changelog for distro focal
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Fri, 02 Oct 2020 03:07:44 +0000
+  [ akrishnan86 ]
+  * wrap MFAS
+
+  [ Akshay Krishnan ]
+  * changing to boost shared_ptr
+  * remove unusede ptr member in MFAS
+  * translation averaging example
+
+  [ akrishnan86 ]
+  * adding documentation for example
+  * naming and other changes - review1
+  * updating defaultdict init
+
+  [ Frank Dellaert ]
+  * Small formatting changes and removal of test header
+  * New method "add" as in GaussianFactorGraph
+  * Re-formatting and using "add"/"auto" where we can.
+  * Fixed spelling mistake
+
+  [ akrishnan86 ]
+  * renaming variables
+
+  [ Varun Agrawal ]
+  * remove all Cython references
+
+  [ Bernd Pfrommer ]
+  * commit of final snapshot version number update
+
+  [ akrishnan86 ]
+  * outlier rejection in separate fn and other readability changes
+  * readability changes
+  * fixing one variable that was not renamed
+
+  [ Varun Agrawal ]
+  * find python if using Default
+
+  [ Frank Dellaert ]
+  * Fixed include error
+
+  [ akrishnan86 ]
+  * removing shared ptr, iostream, renaming
+
+  [ Varun Agrawal ]
+  * added normalize function to orthogonalize the rotation after composition
+  * normalized needs to be called explicitly
+  * Moved normalize next to ClosestTo and add more docs
+
+  [ Jose Luis Blanco Claraco ]
+  * refactor cmake scripts into smaller files
+  * Remove obsolete comments
+  * Use system eigen3 only if first quietly found.
+
+  [ Fan Jiang ]
+  * Squashed 'wrap/' changes from 5e1373486..2192b194e
+  * Resurrect serialization tests
+  * Add unit test for python serdes
+  * Squashed 'wrap/' changes from 2192b194e..dfa624e77
+
+  [ Jose Luis Blanco Claraco ]
+  * Use camel case for cmake files
+  * Revert use system Eigen if found
+
+ -- Borglab Builder <borglab.launchpad@gmail.com>  Sun, 11 Oct 2020 21:25:50 +0000
 
 gtsam (4.1.0-1ubuntu1~23.gbp625543) focal; urgency=medium
 

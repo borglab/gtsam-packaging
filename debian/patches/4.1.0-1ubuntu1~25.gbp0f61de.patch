@@ -5,21 +5,77 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~21.gbpd9afa2) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~25.gbp0f61de) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @d9afa2d5fa52b845780a37800cf5a964dc4952bc **
+   ** SNAPSHOT build @0f61de0b61ce7a89bee8225bb312c7cab69b4985 **
  .
    [ Bernd Pfrommer ]
-   ** SNAPSHOT build @611d7b0c21c962840f5db54a9d5e65ec2ea0182a **
+   ** SNAPSHOT build @8736ade7a0c6fa64f4d48fb1f6758ac5c9c0d313 **
  .
    * modified changelog for distro focal
-   * commit of final snapshot version number update
+ .
+   [ akrishnan86 ]
+   * wrap MFAS
+ .
+   [ Akshay Krishnan ]
+   * changing to boost shared_ptr
+   * remove unusede ptr member in MFAS
+   * translation averaging example
+ .
+   [ akrishnan86 ]
+   * adding documentation for example
+   * naming and other changes - review1
+   * updating defaultdict init
  .
    [ Frank Dellaert ]
-   * Changed name to avoid template confusion in VC 2016
-   * Clean up code and tests and use "means"
-   * Update Point3.h
-Author: Bernd Pfrommer <bernd.pfrommer@gmail.com>
+   * Small formatting changes and removal of test header
+   * New method "add" as in GaussianFactorGraph
+   * Re-formatting and using "add"/"auto" where we can.
+   * Fixed spelling mistake
+ .
+   [ akrishnan86 ]
+   * renaming variables
+ .
+   [ Varun Agrawal ]
+   * remove all Cython references
+ .
+   [ Bernd Pfrommer ]
+   * commit of final snapshot version number update
+ .
+   [ akrishnan86 ]
+   * outlier rejection in separate fn and other readability changes
+   * readability changes
+   * fixing one variable that was not renamed
+ .
+   [ Varun Agrawal ]
+   * find python if using Default
+ .
+   [ Frank Dellaert ]
+   * Fixed include error
+ .
+   [ akrishnan86 ]
+   * removing shared ptr, iostream, renaming
+ .
+   [ Varun Agrawal ]
+   * added normalize function to orthogonalize the rotation after composition
+   * normalized needs to be called explicitly
+   * Moved normalize next to ClosestTo and add more docs
+ .
+   [ Jose Luis Blanco Claraco ]
+   * refactor cmake scripts into smaller files
+   * Remove obsolete comments
+   * Use system eigen3 only if first quietly found.
+ .
+   [ Fan Jiang ]
+   * Squashed 'wrap/' changes from 5e1373486..2192b194e
+   * Resurrect serialization tests
+   * Add unit test for python serdes
+   * Squashed 'wrap/' changes from 2192b194e..dfa624e77
+ .
+   [ Jose Luis Blanco Claraco ]
+   * Use camel case for cmake files
+   * Revert use system Eigen if found
+Author: Borglab Builder <borglab.launchpad@gmail.com>
 
 ---
 The information above should follow the Patch Tagging Guidelines, please
@@ -32,11 +88,143 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2020-10-02
+Last-Update: 2020-10-11
 
+--- gtsam-4.1.0.orig/.github/scripts/python.sh
++++ gtsam-4.1.0/.github/scripts/python.sh
+@@ -43,11 +43,6 @@ if [ -z ${PYTHON_VERSION+x} ]; then
+     exit 127
+ fi
+ 
+-if [ -z ${WRAPPER+x} ]; then
+-    echo "Please provide the wrapper to build!"
+-    exit 126
+-fi
+-
+ PYTHON="python${PYTHON_VERSION}"
+ 
+ if [[ $(uname) == "Darwin" ]]; then
+@@ -61,25 +56,11 @@ PATH=$PATH:$($PYTHON -c "import site; pr
+ 
+ [ "${GTSAM_WITH_TBB:-OFF}" = "ON" ] && install_tbb
+ 
+-case $WRAPPER in
+-"cython")
+-    BUILD_CYTHON="ON"
+-    BUILD_PYBIND="OFF"
+-    TYPEDEF_POINTS_TO_VECTORS="OFF"
+-
+-    sudo $PYTHON -m pip install -r $GITHUB_WORKSPACE/cython/requirements.txt
+-    ;;
+-"pybind")
+-    BUILD_CYTHON="OFF"
+-    BUILD_PYBIND="ON"
+-    TYPEDEF_POINTS_TO_VECTORS="ON"
+-
+-    sudo $PYTHON -m pip install -r $GITHUB_WORKSPACE/python/requirements.txt
+-    ;;
+-*)
+-    exit 126
+-    ;;
+-esac
++
++BUILD_PYBIND="ON"
++TYPEDEF_POINTS_TO_VECTORS="ON"
++
++sudo $PYTHON -m pip install -r $GITHUB_WORKSPACE/python/requirements.txt
+ 
+ mkdir $GITHUB_WORKSPACE/build
+ cd $GITHUB_WORKSPACE/build
+@@ -90,7 +71,6 @@ cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TY
+     -DGTSAM_WITH_TBB=${GTSAM_WITH_TBB:-OFF} \
+     -DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF \
+     -DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF \
+-    -DGTSAM_INSTALL_CYTHON_TOOLBOX=${BUILD_CYTHON} \
+     -DGTSAM_BUILD_PYTHON=${BUILD_PYBIND} \
+     -DGTSAM_TYPEDEF_POINTS_TO_VECTORS=${TYPEDEF_POINTS_TO_VECTORS} \
+     -DGTSAM_PYTHON_VERSION=$PYTHON_VERSION \
+@@ -98,30 +78,10 @@ cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TY
+     -DGTSAM_ALLOW_DEPRECATED_SINCE_V41=OFF \
+     -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/gtsam_install
+ 
+-make -j$(nproc) install &
++make -j$(nproc) install
++
+ 
+-while ps -p $! > /dev/null
+-do
+-  sleep 60
+-  now=$(date +%s)
+-  printf "%d seconds have elapsed\n" $(( (now - start) ))
+-done
+-
+-case $WRAPPER in
+-"cython")
+-    cd $GITHUB_WORKSPACE/build/cython
+-    $PYTHON setup.py install --user --prefix=
+-    cd $GITHUB_WORKSPACE/build/cython/gtsam/tests
+-    $PYTHON -m unittest discover
+-    ;;
+-"pybind")
+-    cd $GITHUB_WORKSPACE/build/python
+-    $PYTHON setup.py install --user --prefix=
+-    cd $GITHUB_WORKSPACE/python/gtsam/tests
+-    $PYTHON -m unittest discover
+-    ;;
+-*)
+-    echo "THIS SHOULD NEVER HAPPEN!"
+-    exit 125
+-    ;;
+-esac
+\ No newline at end of file
++cd $GITHUB_WORKSPACE/build/python
++$PYTHON setup.py install --user --prefix=
++cd $GITHUB_WORKSPACE/python/gtsam/tests
++$PYTHON -m unittest discover
+--- gtsam-4.1.0.orig/.github/workflows/build-python.yml
++++ gtsam-4.1.0/.github/workflows/build-python.yml
+@@ -12,7 +12,6 @@ jobs:
+       CTEST_PARALLEL_LEVEL: 2
+       CMAKE_BUILD_TYPE: ${{ matrix.build_type }}
+       PYTHON_VERSION: ${{ matrix.python_version }}
+-      WRAPPER: ${{ matrix.wrapper }}
+     strategy:
+       fail-fast: false
+       matrix:
+@@ -28,7 +27,6 @@ jobs:
+ 
+         build_type: [Debug, Release]
+         python_version: [3]
+-        wrapper: [pybind]
+         include:
+           - name: ubuntu-18.04-gcc-5
+             os: ubuntu-18.04
+--- gtsam-4.1.0.orig/.github/workflows/trigger-python.yml
++++ gtsam-4.1.0/.github/workflows/trigger-python.yml
+@@ -1,11 +1,11 @@
+-# This triggers Cython builds on `gtsam-manylinux-build`
++# This triggers Python builds on `gtsam-manylinux-build`
+ name: Trigger Python Builds
+ on:
+   push:
+     branches:
+       - develop
+ jobs:
+-  triggerCython:
++  triggerPython:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Repository Dispatch
+@@ -13,5 +13,5 @@ jobs:
+         with:
+           token: ${{ secrets.PYTHON_CI_REPO_ACCESS_TOKEN }}
+           repository: borglab/gtsam-manylinux-build
+-          event-type: cython-wrapper
++          event-type: python-wrapper
+           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
 --- gtsam-4.1.0.orig/CMakeLists.txt
 +++ gtsam-4.1.0/CMakeLists.txt
-@@ -14,6 +14,11 @@ set (GTSAM_VERSION_PATCH 0)
+@@ -14,20 +14,18 @@ set (GTSAM_VERSION_PATCH 0)
  math (EXPR GTSAM_VERSION_NUMERIC "10000 * ${GTSAM_VERSION_MAJOR} + 100 * ${GTSAM_VERSION_MINOR} + ${GTSAM_VERSION_PATCH}")
  set (GTSAM_VERSION_STRING "${GTSAM_VERSION_MAJOR}.${GTSAM_VERSION_MINOR}.${GTSAM_VERSION_PATCH}")
  
@@ -48,68 +236,574 @@ Last-Update: 2020-10-02
  ###############################################################################
  # Gather information, perform checks, set defaults
  
-@@ -113,6 +118,22 @@ if(GTSAM_INSTALL_MATLAB_TOOLBOX AND NOT
+-# Set the default install path to home
+-#set (CMAKE_INSTALL_PREFIX ${HOME} CACHE PATH "Install prefix for library")
+-
+ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+ include(GtsamMakeConfigFile)
+ include(GNUInstallDirs)
+ 
+-# Record the root dir for gtsam - needed during external builds, e.g., ROS
+-set(GTSAM_SOURCE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+-message(STATUS "GTSAM_SOURCE_ROOT_DIR: [${GTSAM_SOURCE_ROOT_DIR}]")
+-
+ # Load build type flags and default to Debug mode
+ include(GtsamBuildTypes)
+ 
+@@ -40,383 +38,21 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_
+   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. ")
  endif()
  
- if(GTSAM_BUILD_PYTHON)
-+    # Get info about the Python3 interpreter
-+    # https://cmake.org/cmake/help/latest/module/FindPython3.html#module:FindPython3
-+    find_package(Python3 COMPONENTS Interpreter Development)
-+
-+    if(NOT ${Python3_FOUND})
-+        message(FATAL_ERROR "Cannot find Python3 interpreter. Please install Python >= 3.6.")
-+    endif()
-+
-+    if(${GTSAM_PYTHON_VERSION} STREQUAL "Default")
-+        set(GTSAM_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-+                CACHE
-+                STRING
-+                "The version of Python to build the wrappers against."
-+                FORCE)
-+    endif()
-+
-     if(GTSAM_UNSTABLE_BUILD_PYTHON)
-         if (NOT GTSAM_BUILD_UNSTABLE)
-             message(WARNING "GTSAM_UNSTABLE_BUILD_PYTHON requires the unstable module to be enabled.")
-@@ -166,7 +187,7 @@ if(MSVC AND BUILD_SHARED_LIBS)
- endif()
- 
- # Store these in variables so they are automatically replicated in GTSAMConfig.cmake and such.
+-# See whether gtsam_unstable is available (it will be present only if we're using a git checkout)
+-if(EXISTS "${PROJECT_SOURCE_DIR}/gtsam_unstable" AND IS_DIRECTORY "${PROJECT_SOURCE_DIR}/gtsam_unstable")
+-    set(GTSAM_UNSTABLE_AVAILABLE 1)
+-else()
+-    set(GTSAM_UNSTABLE_AVAILABLE 0)
+-endif()
+-
+-# ----------------------------------------------------------------------------
+-#   Uninstall target, for "make uninstall"
+-# ----------------------------------------------------------------------------
+-configure_file(
+-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+-  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+-  IMMEDIATE @ONLY)
+-
+-add_custom_target(uninstall
+-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+-
+-
+-###############################################################################
+-# Set up options
+-
+-# Configurable Options
+-if(GTSAM_UNSTABLE_AVAILABLE)
+-    option(GTSAM_BUILD_UNSTABLE              "Enable/Disable libgtsam_unstable"          ON)
+-    option(GTSAM_UNSTABLE_BUILD_PYTHON       "Enable/Disable Python wrapper for libgtsam_unstable" ON)
+-    option(GTSAM_UNSTABLE_INSTALL_MATLAB_TOOLBOX "Enable/Disable MATLAB wrapper for libgtsam_unstable" OFF)
+-endif()
+-option(BUILD_SHARED_LIBS                 "Build shared gtsam library, instead of static" ON)
+-option(GTSAM_USE_QUATERNIONS             "Enable/Disable using an internal Quaternion representation for rotations instead of rotation matrices. If enable, Rot3::EXPMAP is enforced by default." OFF)
+-option(GTSAM_POSE3_EXPMAP                "Enable/Disable using Pose3::EXPMAP as the default mode. If disabled, Pose3::FIRST_ORDER will be used." ON)
+-option(GTSAM_ROT3_EXPMAP                 "Ignore if GTSAM_USE_QUATERNIONS is OFF (Rot3::EXPMAP by default). Otherwise, enable Rot3::EXPMAP, or if disabled, use Rot3::CAYLEY." ON)
+-option(GTSAM_ENABLE_CONSISTENCY_CHECKS   "Enable/Disable expensive consistency checks"       OFF)
+-option(GTSAM_WITH_TBB                    "Use Intel Threaded Building Blocks (TBB) if available" ON)
+-option(GTSAM_WITH_EIGEN_MKL              "Eigen will use Intel MKL if available" OFF)
+-option(GTSAM_WITH_EIGEN_MKL_OPENMP       "Eigen, when using Intel MKL, will also use OpenMP for multithreading if available" OFF)
+-option(GTSAM_THROW_CHEIRALITY_EXCEPTION  "Throw exception when a triangulated point is behind a camera" ON)
+-option(GTSAM_BUILD_PYTHON                "Enable/Disable building & installation of Python module with pybind11" OFF)
+-option(GTSAM_ALLOW_DEPRECATED_SINCE_V41  "Allow use of methods/functions deprecated in GTSAM 4.1" ON)
+-option(GTSAM_SUPPORT_NESTED_DISSECTION   "Support Metis-based nested dissection" ON)
+-option(GTSAM_TANGENT_PREINTEGRATION      "Use new ImuFactor with integration on tangent space" ON)
+-if(NOT MSVC AND NOT XCODE_VERSION)
+-    option(GTSAM_BUILD_WITH_CCACHE           "Use ccache compiler cache" ON)
+-endif()
+-
+-if(NOT MSVC AND NOT XCODE_VERSION)
+-  # Set the build type to upper case for downstream use
+-  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
+-
+-  # Set the GTSAM_BUILD_TAG variable.
+-  # If build type is Release, set to blank (""), else set to the build type.
+-  if(${CMAKE_BUILD_TYPE_UPPER} STREQUAL "RELEASE")
+-   set(GTSAM_BUILD_TAG "") # Don't create release mode tag on installed directory
+-  else()
+-   set(GTSAM_BUILD_TAG "${CMAKE_BUILD_TYPE}")
+-  endif()
+-endif()
+-
+-# Options relating to MATLAB wrapper
+-# TODO: Check for matlab mex binary before handling building of binaries
+-option(GTSAM_INSTALL_MATLAB_TOOLBOX      "Enable/Disable installation of matlab toolbox"  OFF)
+-set(GTSAM_PYTHON_VERSION "Default" CACHE STRING "The version of Python to build the wrappers against.")
+-
+-# Check / set dependent variables for MATLAB wrapper
+-if(GTSAM_INSTALL_MATLAB_TOOLBOX AND GTSAM_BUILD_TYPE_POSTFIXES)
+-    set(CURRENT_POSTFIX ${CMAKE_${CMAKE_BUILD_TYPE_UPPER}_POSTFIX})
+-endif()
+-
+-if(GTSAM_INSTALL_MATLAB_TOOLBOX AND NOT BUILD_SHARED_LIBS)
+-    message(FATAL_ERROR "GTSAM_INSTALL_MATLAB_TOOLBOX and BUILD_SHARED_LIBS=OFF. The MATLAB wrapper cannot be compiled with a static GTSAM library because mex modules are themselves shared libraries.  If you want a self-contained mex module, enable GTSAM_MEX_BUILD_STATIC_MODULE instead of BUILD_SHARED_LIBS=OFF.")
+-endif()
+-
+-if(GTSAM_BUILD_PYTHON)
+-    if(GTSAM_UNSTABLE_BUILD_PYTHON)
+-        if (NOT GTSAM_BUILD_UNSTABLE)
+-            message(WARNING "GTSAM_UNSTABLE_BUILD_PYTHON requires the unstable module to be enabled.")
+-            set(GTSAM_UNSTABLE_BUILD_PYTHON OFF)
+-        endif()
+-    endif()
+-
+-    set(GTSAM_PY_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/python")
+-endif()
+-
+-# Flags for choosing default packaging tools
+-set(CPACK_SOURCE_GENERATOR "TGZ" CACHE STRING "CPack Default Source Generator")
+-set(CPACK_GENERATOR        "TGZ" CACHE STRING "CPack Default Binary Generator")
+-
+-if (CMAKE_GENERATOR STREQUAL "Ninja" AND
+-    ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9) OR
+-     (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)))
+-    # Force colored warnings in Ninja's output, if the compiler has -fdiagnostics-color support.
+-    # Rationale in https://github.com/ninja-build/ninja/issues/814
+-    add_compile_options(-fdiagnostics-color=always)
+-endif()
+-
+-###############################################################################
+-# Find boost
+-
+-# To change the path for boost, you will need to set:
+-# BOOST_ROOT: path to install prefix for boost
+-# Boost_NO_SYSTEM_PATHS: set to true to keep the find script from ignoring BOOST_ROOT
+-
+-if(MSVC)
+-    # By default, boost only builds static libraries on windows
+-    set(Boost_USE_STATIC_LIBS ON)  # only find static libs
+-    # If we ever reset above on windows and, ...
+-    # If we use Boost shared libs, disable auto linking.
+-    # Some libraries, at least Boost Program Options, rely on this to export DLL symbols.
+-    if(NOT Boost_USE_STATIC_LIBS)
+-        list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
+-    endif()
+-    # Virtual memory range for PCH exceeded on VS2015
+-    if(MSVC_VERSION LESS 1910) # older than VS2017
+-      list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Zm295)
+-    endif()
+-endif()
+-
+-# If building DLLs in MSVC, we need to avoid EIGEN_STATIC_ASSERT()
+-# or explicit instantiation will generate build errors.
+-# See: https://bitbucket.org/gtborg/gtsam/issues/417/fail-to-build-on-msvc-2017
+-#
+-if(MSVC AND BUILD_SHARED_LIBS)
+-    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC EIGEN_NO_STATIC_ASSERT)
+-endif()
+-
+-# Store these in variables so they are automatically replicated in GTSAMConfig.cmake and such.
 -set(BOOST_FIND_MINIMUM_VERSION 1.43)
-+set(BOOST_FIND_MINIMUM_VERSION 1.58)
- set(BOOST_FIND_MINIMUM_COMPONENTS serialization system filesystem thread program_options date_time timer chrono regex)
- 
- find_package(Boost ${BOOST_FIND_MINIMUM_VERSION} COMPONENTS ${BOOST_FIND_MINIMUM_COMPONENTS})
-@@ -174,7 +195,7 @@ find_package(Boost ${BOOST_FIND_MINIMUM_
- # Required components
- if(NOT Boost_SERIALIZATION_LIBRARY OR NOT Boost_SYSTEM_LIBRARY OR NOT Boost_FILESYSTEM_LIBRARY OR
-     NOT Boost_THREAD_LIBRARY OR NOT Boost_DATE_TIME_LIBRARY)
+-set(BOOST_FIND_MINIMUM_COMPONENTS serialization system filesystem thread program_options date_time timer chrono regex)
+-
+-find_package(Boost ${BOOST_FIND_MINIMUM_VERSION} COMPONENTS ${BOOST_FIND_MINIMUM_COMPONENTS})
+-
+-# Required components
+-if(NOT Boost_SERIALIZATION_LIBRARY OR NOT Boost_SYSTEM_LIBRARY OR NOT Boost_FILESYSTEM_LIBRARY OR
+-    NOT Boost_THREAD_LIBRARY OR NOT Boost_DATE_TIME_LIBRARY)
 -  message(FATAL_ERROR "Missing required Boost components >= v1.43, please install/upgrade Boost or configure your search paths.")
-+  message(FATAL_ERROR "Missing required Boost components >= v1.58, please install/upgrade Boost or configure your search paths.")
- endif()
+-endif()
+-
+-option(GTSAM_DISABLE_NEW_TIMERS "Disables using Boost.chrono for timing" OFF)
+-# Allow for not using the timer libraries on boost < 1.48 (GTSAM timing code falls back to old timer library)
+-set(GTSAM_BOOST_LIBRARIES
+-  Boost::serialization
+-  Boost::system
+-  Boost::filesystem
+-  Boost::thread
+-  Boost::date_time
+-  Boost::regex
+-)
+-if (GTSAM_DISABLE_NEW_TIMERS)
+-    message("WARNING:  GTSAM timing instrumentation manually disabled")
+-    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC DGTSAM_DISABLE_NEW_TIMERS)
+-else()
+-    if(Boost_TIMER_LIBRARY)
+-      list(APPEND GTSAM_BOOST_LIBRARIES Boost::timer Boost::chrono)
+-    else()
+-      list(APPEND GTSAM_BOOST_LIBRARIES rt) # When using the header-only boost timer library, need -lrt
+-      message("WARNING:  GTSAM timing instrumentation will use the older, less accurate, Boost timer library because boost older than 1.48 was found.")
+-    endif()
+-endif()
+-
+-###############################################################################
+-# Find TBB
+-find_package(TBB 4.4 COMPONENTS tbb tbbmalloc)
+-
+-# Set up variables if we're using TBB
+-if(TBB_FOUND AND GTSAM_WITH_TBB)
+-    set(GTSAM_USE_TBB 1)  # This will go into config.h
+-    if ((${TBB_VERSION_MAJOR} GREATER 2020) OR (${TBB_VERSION_MAJOR} EQUAL 2020))
+-        set(TBB_GREATER_EQUAL_2020 1)
+-    else()
+-        set(TBB_GREATER_EQUAL_2020 0)
+-    endif()
+-    # all definitions and link requisites will go via imported targets:
+-    # tbb & tbbmalloc
+-    list(APPEND GTSAM_ADDITIONAL_LIBRARIES tbb tbbmalloc)
+-else()
+-    set(GTSAM_USE_TBB 0)  # This will go into config.h
+-endif()
+-
+-###############################################################################
+-# Prohibit Timing build mode in combination with TBB
+-if(GTSAM_USE_TBB AND (CMAKE_BUILD_TYPE  STREQUAL "Timing"))
+-      message(FATAL_ERROR "Timing build mode cannot be used together with TBB. Use a sampling profiler such as Instruments or Intel VTune Amplifier instead.")
+-endif()
+-
+-
+-###############################################################################
+-# Find Google perftools
+-find_package(GooglePerfTools)
+-
+-###############################################################################
+-# Support ccache, if installed
+-if(NOT MSVC AND NOT XCODE_VERSION)
+-    find_program(CCACHE_FOUND ccache)
+-    if(CCACHE_FOUND)
+-        if(GTSAM_BUILD_WITH_CCACHE)
+-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+-            set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+-        else()
+-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "")
+-            set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "")
+-        endif()
+-    endif(CCACHE_FOUND)
+-endif()
+-
+-###############################################################################
+-# Find MKL
+-find_package(MKL)
+-
+-if(MKL_FOUND AND GTSAM_WITH_EIGEN_MKL)
+-    set(GTSAM_USE_EIGEN_MKL 1) # This will go into config.h
+-    set(EIGEN_USE_MKL_ALL 1) # This will go into config.h - it makes Eigen use MKL
+-    list(APPEND GTSAM_ADDITIONAL_LIBRARIES ${MKL_LIBRARIES})
+-
+-    # --no-as-needed is required with gcc according to the MKL link advisor
+-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
+-    endif()
+-else()
+-    set(GTSAM_USE_EIGEN_MKL 0)
+-    set(EIGEN_USE_MKL_ALL 0)
+-endif()
+-
+-###############################################################################
+-# Find OpenMP (if we're also using MKL)
+-find_package(OpenMP)  # do this here to generate correct message if disabled
+-
+-if(GTSAM_WITH_EIGEN_MKL AND GTSAM_WITH_EIGEN_MKL_OPENMP AND GTSAM_USE_EIGEN_MKL)
+-    if(OPENMP_FOUND AND GTSAM_USE_EIGEN_MKL AND GTSAM_WITH_EIGEN_MKL_OPENMP)
+-        set(GTSAM_USE_EIGEN_MKL_OPENMP 1) # This will go into config.h
+-        list_append_cache(GTSAM_COMPILE_OPTIONS_PUBLIC ${OpenMP_CXX_FLAGS})
+-    endif()
+-endif()
+-
+-
+-###############################################################################
+-# Option for using system Eigen or GTSAM-bundled Eigen
+-### These patches only affect usage of MKL. If you want to enable MKL, you *must*
+-### use our patched version of Eigen
+-### See:  http://eigen.tuxfamily.org/bz/show_bug.cgi?id=704 (Householder QR MKL selection)
+-###       http://eigen.tuxfamily.org/bz/show_bug.cgi?id=705 (Fix MKL LLT return code)
+-option(GTSAM_USE_SYSTEM_EIGEN "Find and use system-installed Eigen. If 'off', use the one bundled with GTSAM" OFF)
+-option(GTSAM_WITH_EIGEN_UNSUPPORTED "Install Eigen's unsupported modules" OFF)
+-
+-# Switch for using system Eigen or GTSAM-bundled Eigen
+-if(GTSAM_USE_SYSTEM_EIGEN)
+-    find_package(Eigen3 REQUIRED)
+-
+-    # Use generic Eigen include paths e.g. <Eigen/Core>
+-    set(GTSAM_EIGEN_INCLUDE_FOR_INSTALL "${EIGEN3_INCLUDE_DIR}")
+-
+-    # check if MKL is also enabled - can have one or the other, but not both!
+-    # Note: Eigen >= v3.2.5 includes our patches
+-    if(EIGEN_USE_MKL_ALL AND (EIGEN3_VERSION VERSION_LESS 3.2.5))
+-      message(FATAL_ERROR "MKL requires at least Eigen 3.2.5, and your system appears to have an older version. Disable GTSAM_USE_SYSTEM_EIGEN to use GTSAM's copy of Eigen, or disable GTSAM_WITH_EIGEN_MKL")
+-    endif()
+-
+-    # Check for Eigen version which doesn't work with MKL
+-    # See http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1527 for details.
+-    if(EIGEN_USE_MKL_ALL AND (EIGEN3_VERSION VERSION_EQUAL 3.3.4))
+-        message(FATAL_ERROR "MKL does not work with Eigen 3.3.4 because of a bug in Eigen. See http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1527. Disable GTSAM_USE_SYSTEM_EIGEN to use GTSAM's copy of Eigen, disable GTSAM_WITH_EIGEN_MKL, or upgrade/patch your installation of Eigen.")
+-    endif()
+-
+-    # The actual include directory (for BUILD cmake target interface):
+-    set(GTSAM_EIGEN_INCLUDE_FOR_BUILD "${EIGEN3_INCLUDE_DIR}")
+-else()
+-    # Use bundled Eigen include path.
+-    # Clear any variables set by FindEigen3
+-    if(EIGEN3_INCLUDE_DIR)
+-        set(EIGEN3_INCLUDE_DIR NOTFOUND CACHE STRING "" FORCE)
+-    endif()
+-
+-    # set full path to be used by external projects
+-    # this will be added to GTSAM_INCLUDE_DIR by gtsam_extra.cmake.in
+-    set(GTSAM_EIGEN_INCLUDE_FOR_INSTALL "include/gtsam/3rdparty/Eigen/")
++include(cmake/HandleBoost.cmake)            # Boost
++include(cmake/HandleCCache.cmake)           # ccache
++include(cmake/HandleCPack.cmake)            # CPack
++include(cmake/HandleEigen.cmake)            # Eigen3
++include(cmake/HandleGeneralOptions.cmake)  # CMake build options
++include(cmake/HandleMKL.cmake)              # MKL
++include(cmake/HandleOpenMP.cmake)           # OpenMP
++include(cmake/HandlePerfTools.cmake)        # Google perftools
++include(cmake/HandlePython.cmake)           # Python options and commands
++include(cmake/HandleTBB.cmake)              # TBB
++include(cmake/HandleUninstall.cmake)        # for "make uninstall"
  
- option(GTSAM_DISABLE_NEW_TIMERS "Disables using Boost.chrono for timing" OFF)
-@@ -490,7 +511,7 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME "gtsa
+-    # The actual include directory (for BUILD cmake target interface):
+-    set(GTSAM_EIGEN_INCLUDE_FOR_BUILD "${CMAKE_SOURCE_DIR}/gtsam/3rdparty/Eigen/")
+-endif()
+-
+-# Detect Eigen version:
+-set(EIGEN_VER_H "${GTSAM_EIGEN_INCLUDE_FOR_BUILD}/Eigen/src/Core/util/Macros.h")
+-if (EXISTS ${EIGEN_VER_H})
+-    file(READ "${EIGEN_VER_H}" STR_EIGEN_VERSION)
+-
+-    # Extract the Eigen version from the Macros.h file, lines "#define EIGEN_WORLD_VERSION  XX", etc...
+-
+-    string(REGEX MATCH "EIGEN_WORLD_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_WORLD "${STR_EIGEN_VERSION}")
+-    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_WORLD "${GTSAM_EIGEN_VERSION_WORLD}")
+-
+-    string(REGEX MATCH "EIGEN_MAJOR_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_MAJOR "${STR_EIGEN_VERSION}")
+-    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_MAJOR "${GTSAM_EIGEN_VERSION_MAJOR}")
+-
+-    string(REGEX MATCH "EIGEN_MINOR_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_MINOR "${STR_EIGEN_VERSION}")
+-    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_MINOR "${GTSAM_EIGEN_VERSION_MINOR}")
+-
+-    set(GTSAM_EIGEN_VERSION "${GTSAM_EIGEN_VERSION_WORLD}.${GTSAM_EIGEN_VERSION_MAJOR}.${GTSAM_EIGEN_VERSION_MINOR}")
+-
+-    message(STATUS "Found Eigen version: ${GTSAM_EIGEN_VERSION}")
+-else()
+-    message(WARNING "Cannot determine Eigen version, missing file: `${EIGEN_VER_H}`")
+-endif ()
+-
+-if (MSVC)
+-    if (BUILD_SHARED_LIBS)
+-        # mute eigen static assert to avoid errors in shared lib
+-        list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC EIGEN_NO_STATIC_ASSERT)
+-    endif()
+-    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE "/wd4244") # Disable loss of precision which is thrown all over our Eigen
+-endif()
++include(cmake/HandleAllocators.cmake)       # Must be after tbb, pertools
  
- # Deb-package specific cpack
- set(CPACK_DEBIAN_PACKAGE_NAME "libgtsam-dev")
--set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-dev (>= 1.43)") #Example: "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
-+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-dev (>= 1.58)") #Example: "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
- 
+-if (APPLE AND BUILD_SHARED_LIBS)
+-    # Set the default install directory on macOS
+-    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+-endif()
+-
+-###############################################################################
+-# Global compile options
+-
+-# Build list of possible allocators
+-set(possible_allocators "")
+-if(GTSAM_USE_TBB)
+-    list(APPEND possible_allocators TBB)
+-    set(preferred_allocator TBB)
+-else()
+-    list(APPEND possible_allocators BoostPool STL)
+-    set(preferred_allocator STL)
+-endif()
+-if(GOOGLE_PERFTOOLS_FOUND)
+-    list(APPEND possible_allocators tcmalloc)
+-endif()
+-
+-# Check if current allocator choice is valid and set cache option
+-list(FIND possible_allocators "${GTSAM_DEFAULT_ALLOCATOR}" allocator_valid)
+-if(allocator_valid EQUAL -1)
+-    set(GTSAM_DEFAULT_ALLOCATOR ${preferred_allocator} CACHE STRING "Default allocator" FORCE)
+-else()
+-    set(GTSAM_DEFAULT_ALLOCATOR ${preferred_allocator} CACHE STRING "Default allocator")
+-endif()
+-set_property(CACHE GTSAM_DEFAULT_ALLOCATOR PROPERTY STRINGS ${possible_allocators})
+-mark_as_advanced(GTSAM_DEFAULT_ALLOCATOR)
+-
+-# Define compile flags depending on allocator
+-if("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "BoostPool")
+-    set(GTSAM_ALLOCATOR_BOOSTPOOL 1)
+-elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "STL")
+-    set(GTSAM_ALLOCATOR_STL 1)
+-elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "TBB")
+-    set(GTSAM_ALLOCATOR_TBB 1)
+-elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "tcmalloc")
+-    set(GTSAM_ALLOCATOR_STL 1) # tcmalloc replaces malloc, so to use it we use the STL allocator
+-    list(APPEND GTSAM_ADDITIONAL_LIBRARIES "tcmalloc")
+-endif()
+-
+-if(MSVC)
+-    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PRIVATE _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)
+-    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE /wd4251 /wd4275 /wd4251 /wd4661 /wd4344 /wd4503) # Disable non-DLL-exported base class and other warnings
+-    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE /bigobj) # Allow large object files for template-based code
+-endif()
+-
+-# GCC 4.8+ complains about local typedefs which we use for shared_ptr etc.
+-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+-  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
+-    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Wno-unused-local-typedefs)
+-  endif()
+-endif()
+-
+-# As of XCode 7, clang also complains about this
+-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+-  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+-    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Wno-unused-local-typedefs)
+-  endif()
+-endif()
+-
+-if(GTSAM_ENABLE_CONSISTENCY_CHECKS)
+-  # This should be made PUBLIC if GTSAM_EXTRA_CONSISTENCY_CHECKS is someday used in a public .h
+-  list_append_cache(GTSAM_COMPILE_DEFINITIONS_PRIVATE GTSAM_EXTRA_CONSISTENCY_CHECKS)
+-endif()
++include(cmake/HandleGlobalBuildFlags.cmake) # Build flags
  
  ###############################################################################
-@@ -529,9 +550,9 @@ print_build_options_for_target(gtsam)
- print_config("Use System Eigen" "${GTSAM_USE_SYSTEM_EIGEN} (Using version: ${GTSAM_EIGEN_VERSION})")
+ # Add components
+@@ -456,7 +92,6 @@ endif()
+ GtsamMakeConfigFile(GTSAM "${CMAKE_CURRENT_SOURCE_DIR}/gtsam_extra.cmake.in")
+ export(TARGETS ${GTSAM_EXPORTED_TARGETS} FILE GTSAM-exports.cmake)
  
- if(GTSAM_USE_TBB)
+-
+ # Check for doxygen availability - optional dependency
+ find_package(Doxygen)
+ 
+@@ -468,146 +103,11 @@ endif()
+ # CMake Tools
+ add_subdirectory(cmake)
+ 
+-
+-###############################################################################
+-# Set up CPack
+-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GTSAM")
+-set(CPACK_PACKAGE_VENDOR "Frank Dellaert, Georgia Institute of Technology")
+-set(CPACK_PACKAGE_CONTACT "Frank Dellaert, dellaert@cc.gatech.edu")
+-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+-set(CPACK_PACKAGE_VERSION_MAJOR ${GTSAM_VERSION_MAJOR})
+-set(CPACK_PACKAGE_VERSION_MINOR ${GTSAM_VERSION_MINOR})
+-set(CPACK_PACKAGE_VERSION_PATCH ${GTSAM_VERSION_PATCH})
+-set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+-#set(CPACK_INSTALLED_DIRECTORIES "doc;.") # Include doc directory
+-#set(CPACK_INSTALLED_DIRECTORIES ".") # FIXME: throws error
+-set(CPACK_SOURCE_IGNORE_FILES "/build*;/\\\\.;/makestats.sh$")
+-set(CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}" "/gtsam_unstable/")
+-set(CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}" "/package_scripts/")
+-set(CPACK_SOURCE_PACKAGE_FILE_NAME "gtsam-${GTSAM_VERSION_MAJOR}.${GTSAM_VERSION_MINOR}.${GTSAM_VERSION_PATCH}")
+-#set(CPACK_SOURCE_PACKAGE_FILE_NAME "gtsam-aspn${GTSAM_VERSION_PATCH}") # Used for creating ASPN tarballs
+-
+-# Deb-package specific cpack
+-set(CPACK_DEBIAN_PACKAGE_NAME "libgtsam-dev")
+-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-dev (>= 1.43)") #Example: "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
+-
+-
+-###############################################################################
+ # Print configuration variables
+-message(STATUS "===============================================================")
+-message(STATUS "================  Configuration Options  ======================")
+-print_config("CMAKE_CXX_COMPILER_ID type" "${CMAKE_CXX_COMPILER_ID}")
+-print_config("CMAKE_CXX_COMPILER_VERSION" "${CMAKE_CXX_COMPILER_VERSION}")
+-print_config("CMake version"    "${CMAKE_VERSION}")
+-print_config("CMake generator"  "${CMAKE_GENERATOR}")
+-print_config("CMake build tool" "${CMAKE_BUILD_TOOL}")
+-message(STATUS "Build flags                                               ")
+-print_enabled_config(${GTSAM_BUILD_TESTS}                 "Build Tests")
+-print_enabled_config(${GTSAM_BUILD_EXAMPLES_ALWAYS}       "Build examples with 'make all'")
+-print_enabled_config(${GTSAM_BUILD_TIMING_ALWAYS}         "Build timing scripts with 'make all'")
+-if (DOXYGEN_FOUND)
+-    print_enabled_config(${GTSAM_BUILD_DOCS}              "Build Docs")
+-endif()
+-print_enabled_config(${BUILD_SHARED_LIBS}                 "Build shared GTSAM libraries")
+-print_enabled_config(${GTSAM_BUILD_TYPE_POSTFIXES}        "Put build type in library name")
+-if(GTSAM_UNSTABLE_AVAILABLE)
+-    print_enabled_config(${GTSAM_BUILD_UNSTABLE}          "Build libgtsam_unstable        ")
+-    print_enabled_config(${GTSAM_UNSTABLE_BUILD_PYTHON}   "Build GTSAM unstable Python    ")
+-    print_enabled_config(${GTSAM_UNSTABLE_INSTALL_MATLAB_TOOLBOX} "Build MATLAB Toolbox for unstable")
+-endif()
+-
+-if(NOT MSVC AND NOT XCODE_VERSION)
+-    print_enabled_config(${GTSAM_BUILD_WITH_MARCH_NATIVE}     "Build for native architecture  ")
+-    print_config("Build type" "${CMAKE_BUILD_TYPE}")
+-    print_config("C compilation flags" "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+-    print_config("C++ compilation flags" "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+-endif()
+-
+-print_build_options_for_target(gtsam)
+-
+-print_config("Use System Eigen" "${GTSAM_USE_SYSTEM_EIGEN} (Using version: ${GTSAM_EIGEN_VERSION})")
+-
+-if(GTSAM_USE_TBB)
 -    print_config("Use Intel TBB" "Yes")
-+    print_config("Use Intel TBB" "Yes (Version: ${TBB_VERSION})")
- elseif(TBB_FOUND)
+-elseif(TBB_FOUND)
 -    print_config("Use Intel TBB" "TBB found but GTSAM_WITH_TBB is disabled")
-+    print_config("Use Intel TBB" "TBB (Version: ${TBB_VERSION}) found but GTSAM_WITH_TBB is disabled")
- else()
-     print_config("Use Intel TBB" "TBB not found")
- endif()
+-else()
+-    print_config("Use Intel TBB" "TBB not found")
+-endif()
+-if(GTSAM_USE_EIGEN_MKL)
+-    print_config("Eigen will use MKL" "Yes")
+-elseif(MKL_FOUND)
+-    print_config("Eigen will use MKL" "MKL found but GTSAM_WITH_EIGEN_MKL is disabled")
+-else()
+-    print_config("Eigen will use MKL" "MKL not found")
+-endif()
+-if(GTSAM_USE_EIGEN_MKL_OPENMP)
+-    print_config("Eigen will use MKL and OpenMP" "Yes")
+-elseif(OPENMP_FOUND AND NOT GTSAM_WITH_EIGEN_MKL)
+-    print_config("Eigen will use MKL and OpenMP" "OpenMP found but GTSAM_WITH_EIGEN_MKL is disabled")
+-elseif(OPENMP_FOUND AND NOT MKL_FOUND)
+-    print_config("Eigen will use MKL and OpenMP" "OpenMP found but MKL not found")
+-elseif(OPENMP_FOUND)
+-    print_config("Eigen will use MKL and OpenMP" "OpenMP found but GTSAM_WITH_EIGEN_MKL_OPENMP is disabled")
+-else()
+-    print_config("Eigen will use MKL and OpenMP" "OpenMP not found")
+-endif()
+-print_config("Default allocator" "${GTSAM_DEFAULT_ALLOCATOR}")
+-
+-if(GTSAM_THROW_CHEIRALITY_EXCEPTION)
+-    print_config("Cheirality exceptions enabled" "YES")
+-else()
+-    print_config("Cheirality exceptions enabled" "NO")
+-endif()
+-
+-if(NOT MSVC AND NOT XCODE_VERSION)
+-    if(CCACHE_FOUND AND GTSAM_BUILD_WITH_CCACHE)
+-        print_config("Build with ccache" "Yes")
+-    elseif(CCACHE_FOUND)
+-        print_config("Build with ccache" "ccache found but GTSAM_BUILD_WITH_CCACHE is disabled")
+-    else()
+-        print_config("Build with ccache" "No")
+-    endif()
+-endif()
+-
+-message(STATUS "Packaging flags")
+-print_config("CPack Source Generator" "${CPACK_SOURCE_GENERATOR}")
+-print_config("CPack Generator" "${CPACK_GENERATOR}")
+-
+-message(STATUS "GTSAM flags                                               ")
+-print_enabled_config(${GTSAM_USE_QUATERNIONS}             "Quaternions as default Rot3     ")
+-print_enabled_config(${GTSAM_ENABLE_CONSISTENCY_CHECKS}   "Runtime consistency checking    ")
+-print_enabled_config(${GTSAM_ROT3_EXPMAP}                 "Rot3 retract is full ExpMap     ")
+-print_enabled_config(${GTSAM_POSE3_EXPMAP}                "Pose3 retract is full ExpMap    ")
+-print_enabled_config(${GTSAM_ALLOW_DEPRECATED_SINCE_V41}  "Allow features deprecated in GTSAM 4.1")
+-print_enabled_config(${GTSAM_SUPPORT_NESTED_DISSECTION}   "Metis-based Nested Dissection   ")
+-print_enabled_config(${GTSAM_TANGENT_PREINTEGRATION}      "Use tangent-space preintegration")
+-
+-message(STATUS "MATLAB toolbox flags")
+-print_enabled_config(${GTSAM_INSTALL_MATLAB_TOOLBOX}      "Install MATLAB toolbox          ")
+-if (${GTSAM_INSTALL_MATLAB_TOOLBOX})
+-    print_config("MATLAB root" "${MATLAB_ROOT}")
+-    print_config("MEX binary" "${MEX_COMMAND}")
+-endif()
+-message(STATUS "Python toolbox flags                                      ")
+-print_enabled_config(${GTSAM_BUILD_PYTHON}                "Build Python module with pybind ")
+-if(GTSAM_BUILD_PYTHON)
+-    print_config("Python version" ${GTSAM_PYTHON_VERSION})
+-endif()
+-
+-message(STATUS "===============================================================")
++include(cmake/HandlePrintConfiguration.cmake)
+ 
+ # Print warnings at the end
+-if(GTSAM_WITH_TBB AND NOT TBB_FOUND)
+-    message(WARNING "TBB 4.4 or newer was not found - this is ok, but note that GTSAM parallelization will be disabled.  Set GTSAM_WITH_TBB to 'Off' to avoid this warning.")
+-endif()
+-if(GTSAM_WITH_EIGEN_MKL AND NOT MKL_FOUND)
+-    message(WARNING "MKL was not found - this is ok, but note that MKL will be disabled.  Set GTSAM_WITH_EIGEN_MKL to 'Off' to disable this warning.  See INSTALL.md for notes on performance.")
+-endif()
+-if(GTSAM_WITH_EIGEN_MKL_OPENMP AND NOT OPENMP_FOUND AND MKL_FOUND)
+-    message(WARNING "Your compiler does not support OpenMP.  Set GTSAM_WITH_EIGEN_MKL_OPENMP to 'Off' to avoid this warning. See INSTALL.md for notes on performance.")
+-endif()
++include(cmake/HandleFinalChecks.cmake)
+ 
+ # Include CPack *after* all flags
+ include(CPack)
 --- gtsam-4.1.0.orig/INSTALL.md
 +++ gtsam-4.1.0/INSTALL.md
 @@ -13,7 +13,7 @@ $ make install
@@ -120,6 +814,23 @@ Last-Update: 2020-10-02
 +    - BOOST version 1.58 or greater (install through Linux repositories or MacPorts)
      - Cmake version 3.0 or higher
      - Support for XCode 4.3 command line tools on Mac requires CMake 2.8.8 or higher
+ 
+@@ -173,7 +173,7 @@ NOTE:  If _GLIBCXX_DEBUG is used to comp
+ Intel has a guide for installing MKL on Linux through APT repositories at <https://software.intel.com/en-us/articles/installing-intel-free-libs-and-python-apt-repo>.
+ 
+ After following the instructions, add the following to your `~/.bashrc` (and afterwards, open a new terminal before compiling GTSAM):
+-`LD_PRELOAD` need only be set if you are building the cython wrapper to use GTSAM from python.
++`LD_PRELOAD` need only be set if you are building the python wrapper to use GTSAM from python.
+ ```sh
+ source /opt/intel/mkl/bin/mklvars.sh intel64
+ export LD_PRELOAD="$LD_PRELOAD:/opt/intel/mkl/lib/intel64/libmkl_core.so:/opt/intel/mkl/lib/intel64/libmkl_sequential.so"
+@@ -190,6 +190,6 @@ Failing to specify `LD_PRELOAD` may lead
+ `ImportError: /opt/intel/mkl/lib/intel64/libmkl_vml_avx2.so: undefined symbol: mkl_serv_getenv`
+ or
+ `Intel MKL FATAL ERROR: Cannot load libmkl_avx2.so or libmkl_def.so.`
+-when importing GTSAM using the cython wrapper in python.
++when importing GTSAM using the python wrapper.
+ 
  
 --- gtsam-4.1.0.orig/README.md
 +++ gtsam-4.1.0/README.md
@@ -141,6 +852,16 @@ Last-Update: 2020-10-02
  
  ## The Preintegrated IMU Factor
  
+--- gtsam-4.1.0.orig/cmake/CMakeLists.txt
++++ gtsam-4.1.0/cmake/CMakeLists.txt
+@@ -19,7 +19,6 @@ install(FILES
+   GtsamMatlabWrap.cmake
+   GtsamTesting.cmake
+   GtsamPrinting.cmake
+-  FindCython.cmake
+   FindNumPy.cmake
+   README.html
+   DESTINATION "${SCRIPT_INSTALL_DIR}/GTSAMCMakeTools")
 --- gtsam-4.1.0.orig/cmake/FindNumPy.cmake
 +++ gtsam-4.1.0/cmake/FindNumPy.cmake
 @@ -40,17 +40,9 @@
@@ -163,6 +884,26 @@ Last-Update: 2020-10-02
  endif()
  
  if(NOT PYTHONINTERP_FOUND)
+--- gtsam-4.1.0.orig/cmake/GtsamBuildTypes.cmake
++++ gtsam-4.1.0/cmake/GtsamBuildTypes.cmake
+@@ -263,3 +263,17 @@ function(gtsam_apply_build_flags target_
+   target_compile_options(${target_name_} PRIVATE ${GTSAM_COMPILE_OPTIONS_PRIVATE})
+ 
+ endfunction(gtsam_apply_build_flags)
++
++
++if(NOT MSVC AND NOT XCODE_VERSION)
++  # Set the build type to upper case for downstream use
++  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
++
++  # Set the GTSAM_BUILD_TAG variable.
++  # If build type is Release, set to blank (""), else set to the build type.
++  if(${CMAKE_BUILD_TYPE_UPPER} STREQUAL "RELEASE")
++   set(GTSAM_BUILD_TAG "") # Don't create release mode tag on installed directory
++  else()
++   set(GTSAM_BUILD_TAG "${CMAKE_BUILD_TYPE}")
++  endif()
++endif()
 --- gtsam-4.1.0.orig/cmake/GtsamMatlabWrap.cmake
 +++ gtsam-4.1.0/cmake/GtsamMatlabWrap.cmake
 @@ -215,19 +215,15 @@ function(wrap_library_internal interface
@@ -217,6 +958,606 @@ Last-Update: 2020-10-02
      print_padded(GTSAM_COMPILE_DEFINITIONS_PUBLIC_${build_type_toupper})
    endforeach()
  endfunction()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleAllocators.cmake
+@@ -0,0 +1,34 @@
++# Build list of possible allocators
++set(possible_allocators "")
++if(GTSAM_USE_TBB)
++    list(APPEND possible_allocators TBB)
++    set(preferred_allocator TBB)
++else()
++    list(APPEND possible_allocators BoostPool STL)
++    set(preferred_allocator STL)
++endif()
++if(GOOGLE_PERFTOOLS_FOUND)
++    list(APPEND possible_allocators tcmalloc)
++endif()
++
++# Check if current allocator choice is valid and set cache option
++list(FIND possible_allocators "${GTSAM_DEFAULT_ALLOCATOR}" allocator_valid)
++if(allocator_valid EQUAL -1)
++    set(GTSAM_DEFAULT_ALLOCATOR ${preferred_allocator} CACHE STRING "Default allocator" FORCE)
++else()
++    set(GTSAM_DEFAULT_ALLOCATOR ${preferred_allocator} CACHE STRING "Default allocator")
++endif()
++set_property(CACHE GTSAM_DEFAULT_ALLOCATOR PROPERTY STRINGS ${possible_allocators})
++mark_as_advanced(GTSAM_DEFAULT_ALLOCATOR)
++
++# Define compile flags depending on allocator
++if("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "BoostPool")
++    set(GTSAM_ALLOCATOR_BOOSTPOOL 1)
++elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "STL")
++    set(GTSAM_ALLOCATOR_STL 1)
++elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "TBB")
++    set(GTSAM_ALLOCATOR_TBB 1)
++elseif("${GTSAM_DEFAULT_ALLOCATOR}" STREQUAL "tcmalloc")
++    set(GTSAM_ALLOCATOR_STL 1) # tcmalloc replaces malloc, so to use it we use the STL allocator
++    list(APPEND GTSAM_ADDITIONAL_LIBRARIES "tcmalloc")
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleBoost.cmake
+@@ -0,0 +1,56 @@
++###############################################################################
++# Find boost
++
++# To change the path for boost, you will need to set:
++# BOOST_ROOT: path to install prefix for boost
++# Boost_NO_SYSTEM_PATHS: set to true to keep the find script from ignoring BOOST_ROOT
++
++if(MSVC)
++    # By default, boost only builds static libraries on windows
++    set(Boost_USE_STATIC_LIBS ON)  # only find static libs
++    # If we ever reset above on windows and, ...
++    # If we use Boost shared libs, disable auto linking.
++    # Some libraries, at least Boost Program Options, rely on this to export DLL symbols.
++    if(NOT Boost_USE_STATIC_LIBS)
++        list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
++    endif()
++    # Virtual memory range for PCH exceeded on VS2015
++    if(MSVC_VERSION LESS 1910) # older than VS2017
++      list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Zm295)
++    endif()
++endif()
++
++
++# Store these in variables so they are automatically replicated in GTSAMConfig.cmake and such.
++set(BOOST_FIND_MINIMUM_VERSION 1.58)
++set(BOOST_FIND_MINIMUM_COMPONENTS serialization system filesystem thread program_options date_time timer chrono regex)
++
++find_package(Boost ${BOOST_FIND_MINIMUM_VERSION} COMPONENTS ${BOOST_FIND_MINIMUM_COMPONENTS})
++
++# Required components
++if(NOT Boost_SERIALIZATION_LIBRARY OR NOT Boost_SYSTEM_LIBRARY OR NOT Boost_FILESYSTEM_LIBRARY OR
++    NOT Boost_THREAD_LIBRARY OR NOT Boost_DATE_TIME_LIBRARY)
++  message(FATAL_ERROR "Missing required Boost components >= v1.58, please install/upgrade Boost or configure your search paths.")
++endif()
++
++option(GTSAM_DISABLE_NEW_TIMERS "Disables using Boost.chrono for timing" OFF)
++# Allow for not using the timer libraries on boost < 1.48 (GTSAM timing code falls back to old timer library)
++set(GTSAM_BOOST_LIBRARIES
++  Boost::serialization
++  Boost::system
++  Boost::filesystem
++  Boost::thread
++  Boost::date_time
++  Boost::regex
++)
++if (GTSAM_DISABLE_NEW_TIMERS)
++    message("WARNING:  GTSAM timing instrumentation manually disabled")
++    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC DGTSAM_DISABLE_NEW_TIMERS)
++else()
++    if(Boost_TIMER_LIBRARY)
++      list(APPEND GTSAM_BOOST_LIBRARIES Boost::timer Boost::chrono)
++    else()
++      list(APPEND GTSAM_BOOST_LIBRARIES rt) # When using the header-only boost timer library, need -lrt
++      message("WARNING:  GTSAM timing instrumentation will use the older, less accurate, Boost timer library because boost older than 1.48 was found.")
++    endif()
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleCCache.cmake
+@@ -0,0 +1,14 @@
++###############################################################################
++# Support ccache, if installed
++if(NOT MSVC AND NOT XCODE_VERSION)
++    find_program(CCACHE_FOUND ccache)
++    if(CCACHE_FOUND)
++        if(GTSAM_BUILD_WITH_CCACHE)
++            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
++            set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
++        else()
++            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "")
++            set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "")
++        endif()
++    endif(CCACHE_FOUND)
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleCPack.cmake
+@@ -0,0 +1,28 @@
++#JLBC: is all this actually used by someone? could it be removed?
++
++# Flags for choosing default packaging tools
++set(CPACK_SOURCE_GENERATOR "TGZ" CACHE STRING "CPack Default Source Generator")
++set(CPACK_GENERATOR        "TGZ" CACHE STRING "CPack Default Binary Generator")
++
++###############################################################################
++# Set up CPack
++set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GTSAM")
++set(CPACK_PACKAGE_VENDOR "Frank Dellaert, Georgia Institute of Technology")
++set(CPACK_PACKAGE_CONTACT "Frank Dellaert, dellaert@cc.gatech.edu")
++set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
++set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
++set(CPACK_PACKAGE_VERSION_MAJOR ${GTSAM_VERSION_MAJOR})
++set(CPACK_PACKAGE_VERSION_MINOR ${GTSAM_VERSION_MINOR})
++set(CPACK_PACKAGE_VERSION_PATCH ${GTSAM_VERSION_PATCH})
++set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
++#set(CPACK_INSTALLED_DIRECTORIES "doc;.") # Include doc directory
++#set(CPACK_INSTALLED_DIRECTORIES ".") # FIXME: throws error
++set(CPACK_SOURCE_IGNORE_FILES "/build*;/\\\\.;/makestats.sh$")
++set(CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}" "/gtsam_unstable/")
++set(CPACK_SOURCE_IGNORE_FILES "${CPACK_SOURCE_IGNORE_FILES}" "/package_scripts/")
++set(CPACK_SOURCE_PACKAGE_FILE_NAME "gtsam-${GTSAM_VERSION_MAJOR}.${GTSAM_VERSION_MINOR}.${GTSAM_VERSION_PATCH}")
++#set(CPACK_SOURCE_PACKAGE_FILE_NAME "gtsam-aspn${GTSAM_VERSION_PATCH}") # Used for creating ASPN tarballs
++
++# Deb-package specific cpack
++set(CPACK_DEBIAN_PACKAGE_NAME "libgtsam-dev")
++set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-dev (>= 1.58)") #Example: "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleEigen.cmake
+@@ -0,0 +1,77 @@
++###############################################################################
++# Option for using system Eigen or GTSAM-bundled Eigen
++
++option(GTSAM_USE_SYSTEM_EIGEN "Find and use system-installed Eigen. If 'off', use the one bundled with GTSAM" OFF)
++
++if(NOT GTSAM_USE_SYSTEM_EIGEN)
++  # This option only makes sense if using the embedded copy of Eigen, it is
++  # used to decide whether to *install* the "unsupported" module:
++  option(GTSAM_WITH_EIGEN_UNSUPPORTED "Install Eigen's unsupported modules" OFF)
++endif()
++
++# Switch for using system Eigen or GTSAM-bundled Eigen
++if(GTSAM_USE_SYSTEM_EIGEN)
++    find_package(Eigen3 REQUIRED)
++
++    # Use generic Eigen include paths e.g. <Eigen/Core>
++    set(GTSAM_EIGEN_INCLUDE_FOR_INSTALL "${EIGEN3_INCLUDE_DIR}")
++
++    # check if MKL is also enabled - can have one or the other, but not both!
++    # Note: Eigen >= v3.2.5 includes our patches
++    if(EIGEN_USE_MKL_ALL AND (EIGEN3_VERSION VERSION_LESS 3.2.5))
++      message(FATAL_ERROR "MKL requires at least Eigen 3.2.5, and your system appears to have an older version. Disable GTSAM_USE_SYSTEM_EIGEN to use GTSAM's copy of Eigen, or disable GTSAM_WITH_EIGEN_MKL")
++    endif()
++
++    # Check for Eigen version which doesn't work with MKL
++    # See http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1527 for details.
++    if(EIGEN_USE_MKL_ALL AND (EIGEN3_VERSION VERSION_EQUAL 3.3.4))
++        message(FATAL_ERROR "MKL does not work with Eigen 3.3.4 because of a bug in Eigen. See http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1527. Disable GTSAM_USE_SYSTEM_EIGEN to use GTSAM's copy of Eigen, disable GTSAM_WITH_EIGEN_MKL, or upgrade/patch your installation of Eigen.")
++    endif()
++
++    # The actual include directory (for BUILD cmake target interface):
++    set(GTSAM_EIGEN_INCLUDE_FOR_BUILD "${EIGEN3_INCLUDE_DIR}")
++else()
++    # Use bundled Eigen include path.
++    # Clear any variables set by FindEigen3
++    if(EIGEN3_INCLUDE_DIR)
++        set(EIGEN3_INCLUDE_DIR NOTFOUND CACHE STRING "" FORCE)
++    endif()
++
++    # set full path to be used by external projects
++    # this will be added to GTSAM_INCLUDE_DIR by gtsam_extra.cmake.in
++    set(GTSAM_EIGEN_INCLUDE_FOR_INSTALL "include/gtsam/3rdparty/Eigen/")
++
++    # The actual include directory (for BUILD cmake target interface):
++    set(GTSAM_EIGEN_INCLUDE_FOR_BUILD "${CMAKE_SOURCE_DIR}/gtsam/3rdparty/Eigen/")
++endif()
++
++# Detect Eigen version:
++set(EIGEN_VER_H "${GTSAM_EIGEN_INCLUDE_FOR_BUILD}/Eigen/src/Core/util/Macros.h")
++if (EXISTS ${EIGEN_VER_H})
++    file(READ "${EIGEN_VER_H}" STR_EIGEN_VERSION)
++
++    # Extract the Eigen version from the Macros.h file, lines "#define EIGEN_WORLD_VERSION  XX", etc...
++
++    string(REGEX MATCH "EIGEN_WORLD_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_WORLD "${STR_EIGEN_VERSION}")
++    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_WORLD "${GTSAM_EIGEN_VERSION_WORLD}")
++
++    string(REGEX MATCH "EIGEN_MAJOR_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_MAJOR "${STR_EIGEN_VERSION}")
++    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_MAJOR "${GTSAM_EIGEN_VERSION_MAJOR}")
++
++    string(REGEX MATCH "EIGEN_MINOR_VERSION[ ]+[0-9]+" GTSAM_EIGEN_VERSION_MINOR "${STR_EIGEN_VERSION}")
++    string(REGEX MATCH "[0-9]+" GTSAM_EIGEN_VERSION_MINOR "${GTSAM_EIGEN_VERSION_MINOR}")
++
++    set(GTSAM_EIGEN_VERSION "${GTSAM_EIGEN_VERSION_WORLD}.${GTSAM_EIGEN_VERSION_MAJOR}.${GTSAM_EIGEN_VERSION_MINOR}")
++
++    message(STATUS "Found Eigen version: ${GTSAM_EIGEN_VERSION}")
++else()
++    message(WARNING "Cannot determine Eigen version, missing file: `${EIGEN_VER_H}`")
++endif ()
++
++if (MSVC)
++    if (BUILD_SHARED_LIBS)
++        # mute eigen static assert to avoid errors in shared lib
++        list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC EIGEN_NO_STATIC_ASSERT)
++    endif()
++    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE "/wd4244") # Disable loss of precision which is thrown all over our Eigen
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleFinalChecks.cmake
+@@ -0,0 +1,10 @@
++# Print warnings at the end
++if(GTSAM_WITH_TBB AND NOT TBB_FOUND)
++    message(WARNING "TBB 4.4 or newer was not found - this is ok, but note that GTSAM parallelization will be disabled.  Set GTSAM_WITH_TBB to 'Off' to avoid this warning.")
++endif()
++if(GTSAM_WITH_EIGEN_MKL AND NOT MKL_FOUND)
++    message(WARNING "MKL was not found - this is ok, but note that MKL will be disabled.  Set GTSAM_WITH_EIGEN_MKL to 'Off' to disable this warning.  See INSTALL.md for notes on performance.")
++endif()
++if(GTSAM_WITH_EIGEN_MKL_OPENMP AND NOT OPENMP_FOUND AND MKL_FOUND)
++    message(WARNING "Your compiler does not support OpenMP.  Set GTSAM_WITH_EIGEN_MKL_OPENMP to 'Off' to avoid this warning. See INSTALL.md for notes on performance.")
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleGeneralOptions.cmake
+@@ -0,0 +1,46 @@
++###############################################################################
++# Set up options
++
++# See whether gtsam_unstable is available (it will be present only if we're using a git checkout)
++if(EXISTS "${PROJECT_SOURCE_DIR}/gtsam_unstable" AND IS_DIRECTORY "${PROJECT_SOURCE_DIR}/gtsam_unstable")
++    set(GTSAM_UNSTABLE_AVAILABLE 1)
++else()
++    set(GTSAM_UNSTABLE_AVAILABLE 0)
++endif()
++
++# Configurable Options
++if(GTSAM_UNSTABLE_AVAILABLE)
++    option(GTSAM_BUILD_UNSTABLE              "Enable/Disable libgtsam_unstable"          ON)
++    option(GTSAM_UNSTABLE_BUILD_PYTHON       "Enable/Disable Python wrapper for libgtsam_unstable" ON)
++    option(GTSAM_UNSTABLE_INSTALL_MATLAB_TOOLBOX "Enable/Disable MATLAB wrapper for libgtsam_unstable" OFF)
++endif()
++option(BUILD_SHARED_LIBS                 "Build shared gtsam library, instead of static" ON)
++option(GTSAM_USE_QUATERNIONS             "Enable/Disable using an internal Quaternion representation for rotations instead of rotation matrices. If enable, Rot3::EXPMAP is enforced by default." OFF)
++option(GTSAM_POSE3_EXPMAP                "Enable/Disable using Pose3::EXPMAP as the default mode. If disabled, Pose3::FIRST_ORDER will be used." ON)
++option(GTSAM_ROT3_EXPMAP                 "Ignore if GTSAM_USE_QUATERNIONS is OFF (Rot3::EXPMAP by default). Otherwise, enable Rot3::EXPMAP, or if disabled, use Rot3::CAYLEY." ON)
++option(GTSAM_ENABLE_CONSISTENCY_CHECKS   "Enable/Disable expensive consistency checks"       OFF)
++option(GTSAM_WITH_TBB                    "Use Intel Threaded Building Blocks (TBB) if available" ON)
++option(GTSAM_WITH_EIGEN_MKL              "Eigen will use Intel MKL if available" OFF)
++option(GTSAM_WITH_EIGEN_MKL_OPENMP       "Eigen, when using Intel MKL, will also use OpenMP for multithreading if available" OFF)
++option(GTSAM_THROW_CHEIRALITY_EXCEPTION  "Throw exception when a triangulated point is behind a camera" ON)
++option(GTSAM_BUILD_PYTHON                "Enable/Disable building & installation of Python module with pybind11" OFF)
++option(GTSAM_ALLOW_DEPRECATED_SINCE_V41  "Allow use of methods/functions deprecated in GTSAM 4.1" ON)
++option(GTSAM_SUPPORT_NESTED_DISSECTION   "Support Metis-based nested dissection" ON)
++option(GTSAM_TANGENT_PREINTEGRATION      "Use new ImuFactor with integration on tangent space" ON)
++if(NOT MSVC AND NOT XCODE_VERSION)
++    option(GTSAM_BUILD_WITH_CCACHE           "Use ccache compiler cache" ON)
++endif()
++
++# Options relating to MATLAB wrapper
++# TODO: Check for matlab mex binary before handling building of binaries
++option(GTSAM_INSTALL_MATLAB_TOOLBOX      "Enable/Disable installation of matlab toolbox"  OFF)
++set(GTSAM_PYTHON_VERSION "Default" CACHE STRING "The version of Python to build the wrappers against.")
++
++# Check / set dependent variables for MATLAB wrapper
++if(GTSAM_INSTALL_MATLAB_TOOLBOX AND GTSAM_BUILD_TYPE_POSTFIXES)
++    set(CURRENT_POSTFIX ${CMAKE_${CMAKE_BUILD_TYPE_UPPER}_POSTFIX})
++endif()
++
++if(GTSAM_INSTALL_MATLAB_TOOLBOX AND NOT BUILD_SHARED_LIBS)
++    message(FATAL_ERROR "GTSAM_INSTALL_MATLAB_TOOLBOX and BUILD_SHARED_LIBS=OFF. The MATLAB wrapper cannot be compiled with a static GTSAM library because mex modules are themselves shared libraries.  If you want a self-contained mex module, enable GTSAM_MEX_BUILD_STATIC_MODULE instead of BUILD_SHARED_LIBS=OFF.")
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleGlobalBuildFlags.cmake
+@@ -0,0 +1,52 @@
++# JLBC: These should ideally be ported to "modern cmake" via target properties.
++#
++
++if (CMAKE_GENERATOR STREQUAL "Ninja" AND
++    ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9) OR
++     (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)))
++    # Force colored warnings in Ninja's output, if the compiler has -fdiagnostics-color support.
++    # Rationale in https://github.com/ninja-build/ninja/issues/814
++    add_compile_options(-fdiagnostics-color=always)
++endif()
++
++
++# If building DLLs in MSVC, we need to avoid EIGEN_STATIC_ASSERT()
++# or explicit instantiation will generate build errors.
++# See: https://bitbucket.org/gtborg/gtsam/issues/417/fail-to-build-on-msvc-2017
++#
++if(MSVC AND BUILD_SHARED_LIBS)
++    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PUBLIC EIGEN_NO_STATIC_ASSERT)
++endif()
++
++if (APPLE AND BUILD_SHARED_LIBS)
++    # Set the default install directory on macOS
++    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
++endif()
++
++###############################################################################
++# Global compile options
++
++if(MSVC)
++    list_append_cache(GTSAM_COMPILE_DEFINITIONS_PRIVATE _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS)
++    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE /wd4251 /wd4275 /wd4251 /wd4661 /wd4344 /wd4503) # Disable non-DLL-exported base class and other warnings
++    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE /bigobj) # Allow large object files for template-based code
++endif()
++
++# GCC 4.8+ complains about local typedefs which we use for shared_ptr etc.
++if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
++  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
++    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Wno-unused-local-typedefs)
++  endif()
++endif()
++
++# As of XCode 7, clang also complains about this
++if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
++  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
++    list_append_cache(GTSAM_COMPILE_OPTIONS_PRIVATE -Wno-unused-local-typedefs)
++  endif()
++endif()
++
++if(GTSAM_ENABLE_CONSISTENCY_CHECKS)
++  # This should be made PUBLIC if GTSAM_EXTRA_CONSISTENCY_CHECKS is someday used in a public .h
++  list_append_cache(GTSAM_COMPILE_DEFINITIONS_PRIVATE GTSAM_EXTRA_CONSISTENCY_CHECKS)
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleMKL.cmake
+@@ -0,0 +1,17 @@
++###############################################################################
++# Find MKL
++find_package(MKL)
++
++if(MKL_FOUND AND GTSAM_WITH_EIGEN_MKL)
++    set(GTSAM_USE_EIGEN_MKL 1) # This will go into config.h
++    set(EIGEN_USE_MKL_ALL 1) # This will go into config.h - it makes Eigen use MKL
++    list(APPEND GTSAM_ADDITIONAL_LIBRARIES ${MKL_LIBRARIES})
++
++    # --no-as-needed is required with gcc according to the MKL link advisor
++    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
++        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-as-needed")
++    endif()
++else()
++    set(GTSAM_USE_EIGEN_MKL 0)
++    set(EIGEN_USE_MKL_ALL 0)
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleOpenMP.cmake
+@@ -0,0 +1,11 @@
++
++###############################################################################
++# Find OpenMP (if we're also using MKL)
++find_package(OpenMP)  # do this here to generate correct message if disabled
++
++if(GTSAM_WITH_EIGEN_MKL AND GTSAM_WITH_EIGEN_MKL_OPENMP AND GTSAM_USE_EIGEN_MKL)
++    if(OPENMP_FOUND AND GTSAM_USE_EIGEN_MKL AND GTSAM_WITH_EIGEN_MKL_OPENMP)
++        set(GTSAM_USE_EIGEN_MKL_OPENMP 1) # This will go into config.h
++        list_append_cache(GTSAM_COMPILE_OPTIONS_PUBLIC ${OpenMP_CXX_FLAGS})
++    endif()
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandlePerfTools.cmake
+@@ -0,0 +1,4 @@
++
++###############################################################################
++# Find Google perftools
++find_package(GooglePerfTools)
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandlePrintConfiguration.cmake
+@@ -0,0 +1,104 @@
++###############################################################################
++# Print configuration variables
++message(STATUS "===============================================================")
++message(STATUS "================  Configuration Options  ======================")
++print_config("CMAKE_CXX_COMPILER_ID type" "${CMAKE_CXX_COMPILER_ID}")
++print_config("CMAKE_CXX_COMPILER_VERSION" "${CMAKE_CXX_COMPILER_VERSION}")
++print_config("CMake version"    "${CMAKE_VERSION}")
++print_config("CMake generator"  "${CMAKE_GENERATOR}")
++print_config("CMake build tool" "${CMAKE_BUILD_TOOL}")
++message(STATUS "Build flags                                               ")
++print_enabled_config(${GTSAM_BUILD_TESTS}                 "Build Tests")
++print_enabled_config(${GTSAM_BUILD_EXAMPLES_ALWAYS}       "Build examples with 'make all'")
++print_enabled_config(${GTSAM_BUILD_TIMING_ALWAYS}         "Build timing scripts with 'make all'")
++if (DOXYGEN_FOUND)
++    print_enabled_config(${GTSAM_BUILD_DOCS}              "Build Docs")
++endif()
++print_enabled_config(${BUILD_SHARED_LIBS}                 "Build shared GTSAM libraries")
++print_enabled_config(${GTSAM_BUILD_TYPE_POSTFIXES}        "Put build type in library name")
++if(GTSAM_UNSTABLE_AVAILABLE)
++    print_enabled_config(${GTSAM_BUILD_UNSTABLE}          "Build libgtsam_unstable        ")
++    print_enabled_config(${GTSAM_UNSTABLE_BUILD_PYTHON}   "Build GTSAM unstable Python    ")
++    print_enabled_config(${GTSAM_UNSTABLE_INSTALL_MATLAB_TOOLBOX} "Build MATLAB Toolbox for unstable")
++endif()
++
++if(NOT MSVC AND NOT XCODE_VERSION)
++    print_enabled_config(${GTSAM_BUILD_WITH_MARCH_NATIVE}     "Build for native architecture  ")
++    print_config("Build type" "${CMAKE_BUILD_TYPE}")
++    print_config("C compilation flags" "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
++    print_config("C++ compilation flags" "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
++endif()
++
++print_build_options_for_target(gtsam)
++
++print_config("Use System Eigen" "${GTSAM_USE_SYSTEM_EIGEN} (Using version: ${GTSAM_EIGEN_VERSION})")
++
++if(GTSAM_USE_TBB)
++    print_config("Use Intel TBB" "Yes (Version: ${TBB_VERSION})")
++elseif(TBB_FOUND)
++    print_config("Use Intel TBB" "TBB (Version: ${TBB_VERSION}) found but GTSAM_WITH_TBB is disabled")
++else()
++    print_config("Use Intel TBB" "TBB not found")
++endif()
++if(GTSAM_USE_EIGEN_MKL)
++    print_config("Eigen will use MKL" "Yes")
++elseif(MKL_FOUND)
++    print_config("Eigen will use MKL" "MKL found but GTSAM_WITH_EIGEN_MKL is disabled")
++else()
++    print_config("Eigen will use MKL" "MKL not found")
++endif()
++if(GTSAM_USE_EIGEN_MKL_OPENMP)
++    print_config("Eigen will use MKL and OpenMP" "Yes")
++elseif(OPENMP_FOUND AND NOT GTSAM_WITH_EIGEN_MKL)
++    print_config("Eigen will use MKL and OpenMP" "OpenMP found but GTSAM_WITH_EIGEN_MKL is disabled")
++elseif(OPENMP_FOUND AND NOT MKL_FOUND)
++    print_config("Eigen will use MKL and OpenMP" "OpenMP found but MKL not found")
++elseif(OPENMP_FOUND)
++    print_config("Eigen will use MKL and OpenMP" "OpenMP found but GTSAM_WITH_EIGEN_MKL_OPENMP is disabled")
++else()
++    print_config("Eigen will use MKL and OpenMP" "OpenMP not found")
++endif()
++print_config("Default allocator" "${GTSAM_DEFAULT_ALLOCATOR}")
++
++if(GTSAM_THROW_CHEIRALITY_EXCEPTION)
++    print_config("Cheirality exceptions enabled" "YES")
++else()
++    print_config("Cheirality exceptions enabled" "NO")
++endif()
++
++if(NOT MSVC AND NOT XCODE_VERSION)
++    if(CCACHE_FOUND AND GTSAM_BUILD_WITH_CCACHE)
++        print_config("Build with ccache" "Yes")
++    elseif(CCACHE_FOUND)
++        print_config("Build with ccache" "ccache found but GTSAM_BUILD_WITH_CCACHE is disabled")
++    else()
++        print_config("Build with ccache" "No")
++    endif()
++endif()
++
++message(STATUS "Packaging flags")
++print_config("CPack Source Generator" "${CPACK_SOURCE_GENERATOR}")
++print_config("CPack Generator" "${CPACK_GENERATOR}")
++
++message(STATUS "GTSAM flags                                               ")
++print_enabled_config(${GTSAM_USE_QUATERNIONS}             "Quaternions as default Rot3     ")
++print_enabled_config(${GTSAM_ENABLE_CONSISTENCY_CHECKS}   "Runtime consistency checking    ")
++print_enabled_config(${GTSAM_ROT3_EXPMAP}                 "Rot3 retract is full ExpMap     ")
++print_enabled_config(${GTSAM_POSE3_EXPMAP}                "Pose3 retract is full ExpMap    ")
++print_enabled_config(${GTSAM_ALLOW_DEPRECATED_SINCE_V41}  "Allow features deprecated in GTSAM 4.1")
++print_enabled_config(${GTSAM_SUPPORT_NESTED_DISSECTION}   "Metis-based Nested Dissection   ")
++print_enabled_config(${GTSAM_TANGENT_PREINTEGRATION}      "Use tangent-space preintegration")
++
++message(STATUS "MATLAB toolbox flags")
++print_enabled_config(${GTSAM_INSTALL_MATLAB_TOOLBOX}      "Install MATLAB toolbox          ")
++if (${GTSAM_INSTALL_MATLAB_TOOLBOX})
++    print_config("MATLAB root" "${MATLAB_ROOT}")
++    print_config("MEX binary" "${MEX_COMMAND}")
++endif()
++message(STATUS "Python toolbox flags                                      ")
++print_enabled_config(${GTSAM_BUILD_PYTHON}                "Build Python module with pybind ")
++if(GTSAM_BUILD_PYTHON)
++    print_config("Python version" ${GTSAM_PYTHON_VERSION})
++endif()
++
++message(STATUS "===============================================================")
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandlePython.cmake
+@@ -0,0 +1,26 @@
++if(GTSAM_BUILD_PYTHON)
++    if(${GTSAM_PYTHON_VERSION} STREQUAL "Default")
++        # Get info about the Python3 interpreter
++        # https://cmake.org/cmake/help/latest/module/FindPython3.html#module:FindPython3
++        find_package(Python3 COMPONENTS Interpreter Development)
++
++        if(NOT ${Python3_FOUND})
++            message(FATAL_ERROR "Cannot find Python3 interpreter. Please install Python >= 3.6.")
++        endif()
++
++        set(GTSAM_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
++                CACHE
++                STRING
++                "The version of Python to build the wrappers against."
++                FORCE)
++    endif()
++
++    if(GTSAM_UNSTABLE_BUILD_PYTHON)
++        if (NOT GTSAM_BUILD_UNSTABLE)
++            message(WARNING "GTSAM_UNSTABLE_BUILD_PYTHON requires the unstable module to be enabled.")
++            set(GTSAM_UNSTABLE_BUILD_PYTHON OFF)
++        endif()
++    endif()
++
++    set(GTSAM_PY_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/python")
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleTBB.cmake
+@@ -0,0 +1,24 @@
++###############################################################################
++# Find TBB
++find_package(TBB 4.4 COMPONENTS tbb tbbmalloc)
++
++# Set up variables if we're using TBB
++if(TBB_FOUND AND GTSAM_WITH_TBB)
++    set(GTSAM_USE_TBB 1)  # This will go into config.h
++    if ((${TBB_VERSION_MAJOR} GREATER 2020) OR (${TBB_VERSION_MAJOR} EQUAL 2020))
++        set(TBB_GREATER_EQUAL_2020 1)
++    else()
++        set(TBB_GREATER_EQUAL_2020 0)
++    endif()
++    # all definitions and link requisites will go via imported targets:
++    # tbb & tbbmalloc
++    list(APPEND GTSAM_ADDITIONAL_LIBRARIES tbb tbbmalloc)
++else()
++    set(GTSAM_USE_TBB 0)  # This will go into config.h
++endif()
++
++###############################################################################
++# Prohibit Timing build mode in combination with TBB
++if(GTSAM_USE_TBB AND (CMAKE_BUILD_TYPE  STREQUAL "Timing"))
++      message(FATAL_ERROR "Timing build mode cannot be used together with TBB. Use a sampling profiler such as Instruments or Intel VTune Amplifier instead.")
++endif()
+--- /dev/null
++++ gtsam-4.1.0/cmake/HandleUninstall.cmake
+@@ -0,0 +1,10 @@
++# ----------------------------------------------------------------------------
++#   Uninstall target, for "make uninstall"
++# ----------------------------------------------------------------------------
++configure_file(
++  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
++  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
++  IMMEDIATE @ONLY)
++
++add_custom_target(uninstall
++  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+--- gtsam-4.1.0.orig/docker/ubuntu-gtsam-python/Dockerfile
++++ gtsam-4.1.0/docker/ubuntu-gtsam-python/Dockerfile
+@@ -7,9 +7,9 @@ FROM dellaert/ubuntu-gtsam:bionic
+ RUN apt-get install -y python3-pip python3-dev
+ 
+ # Install python wrapper requirements
+-RUN python3 -m pip install -U -r /usr/src/gtsam/cython/requirements.txt
++RUN python3 -m pip install -U -r /usr/src/gtsam/python/requirements.txt
+ 
+-# Run cmake again, now with cython toolbox on
++# Run cmake again, now with python toolbox on
+ WORKDIR /usr/src/gtsam/build
+ RUN cmake \
+     -DCMAKE_BUILD_TYPE=Release \
+@@ -17,7 +17,7 @@ RUN cmake \
+     -DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF \
+     -DGTSAM_BUILD_TIMING_ALWAYS=OFF \
+     -DGTSAM_BUILD_TESTS=OFF \
+-    -DGTSAM_INSTALL_CYTHON_TOOLBOX=ON \
++    -DGTSAM_BUILD_PYTHON=ON \
+     -DGTSAM_PYTHON_VERSION=3\
+     ..
+ 
+@@ -25,7 +25,7 @@ RUN cmake \
+ RUN make -j4 install && make clean
+ 
+ # Needed to run python wrapper:
+-RUN echo 'export PYTHONPATH=/usr/local/cython/:$PYTHONPATH' >> /root/.bashrc
++RUN echo 'export PYTHONPATH=/usr/local/python/:$PYTHONPATH' >> /root/.bashrc
+ 
+ # Run bash
+ CMD ["bash"]
+--- gtsam-4.1.0.orig/docker/ubuntu-gtsam/Dockerfile
++++ gtsam-4.1.0/docker/ubuntu-gtsam/Dockerfile
+@@ -23,7 +23,6 @@ RUN cmake \
+     -DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF \
+     -DGTSAM_BUILD_TIMING_ALWAYS=OFF \
+     -DGTSAM_BUILD_TESTS=OFF \
+-    -DGTSAM_INSTALL_CYTHON_TOOLBOX=OFF \
+     ..
+ 
+ # Build
 --- /dev/null
 +++ gtsam-4.1.0/examples/CombinedImuFactorsExample.cpp
 @@ -0,0 +1,303 @@
@@ -2118,7 +3459,38 @@ Last-Update: 2020-10-02
  
      /** Create from Quaternion coefficients */
      static Rot3 Quaternion(double w, double x, double y, double z) {
-@@ -425,19 +441,19 @@ namespace gtsam {
+@@ -246,9 +262,29 @@ namespace gtsam {
+     static Rot3 AlignTwoPairs(const Unit3& a_p, const Unit3& b_p,  //
+                               const Unit3& a_q, const Unit3& b_q);
+ 
+-    /// Static, named constructor that finds Rot3 element closest to M in Frobenius norm.
++    /**
++     * Static, named constructor that finds Rot3 element closest to M in Frobenius norm.
++     * 
++     * Uses Full SVD to compute the orthogonal matrix, thus is highly accurate and robust.
++     * 
++     * N. J. Higham. Matrix nearness problems and applications.
++     * In M. J. C. Gover and S. Barnett, editors, Applications of Matrix Theory, pages 1–27.
++     * Oxford University Press, 1989.
++     */
+     static Rot3 ClosestTo(const Matrix3& M) { return Rot3(SO3::ClosestTo(M)); }
+ 
++    /**
++     * Normalize rotation so that its determinant is 1.
++     * This means either re-orthogonalizing the Matrix representation or
++     * normalizing the quaternion representation.
++     *
++     * This method is akin to `ClosestTo` but uses a computationally cheaper
++     * algorithm.
++     * 
++     * Ref: https://drive.google.com/file/d/0B9rLLz1XQKmaZTlQdV81QjNoZTA/view
++     */
++    Rot3 normalized() const;
++
+     /// @}
+     /// @name Testable
+     /// @{
+@@ -425,19 +461,19 @@ namespace gtsam {
       * Use RQ to calculate xyz angle representation
       * @return a vector containing x,y,z s.t. R = Rot3::RzRyRx(x,y,z)
       */
@@ -2141,7 +3513,7 @@ Last-Update: 2020-10-02
  
      /**
       * Accessor to get to component of angle representations
-@@ -445,7 +461,7 @@ namespace gtsam {
+@@ -445,7 +481,7 @@ namespace gtsam {
       * you should instead use xyz() or ypr()
       * TODO: make this more efficient
       */
@@ -2150,7 +3522,7 @@ Last-Update: 2020-10-02
  
      /**
       * Accessor to get to component of angle representations
-@@ -453,7 +469,7 @@ namespace gtsam {
+@@ -453,7 +489,7 @@ namespace gtsam {
       * you should instead use xyz() or ypr()
       * TODO: make this more efficient
       */
@@ -2159,7 +3531,7 @@ Last-Update: 2020-10-02
  
      /**
       * Accessor to get to component of angle representations
-@@ -461,7 +477,7 @@ namespace gtsam {
+@@ -461,7 +497,7 @@ namespace gtsam {
       * you should instead use xyz() or ypr()
       * TODO: make this more efficient
       */
@@ -2168,7 +3540,7 @@ Last-Update: 2020-10-02
  
      /// @}
      /// @name Advanced Interface
-@@ -541,7 +557,8 @@ namespace gtsam {
+@@ -541,7 +577,8 @@ namespace gtsam {
     * @return an upper triangular matrix R
     * @return a vector [thetax, thetay, thetaz] in radians.
     */
@@ -2200,9 +3572,43 @@ Last-Update: 2020-10-02
    return Rot3(
        _cc,- c_s + ssc,  s_s + csc,
        _cs,  c_c + sss, -s_c + css,
+@@ -105,6 +109,33 @@ Rot3 Rot3::RzRyRx(double x, double y, do
+ }
+ 
+ /* ************************************************************************* */
++Rot3 Rot3::normalized() const {
++  /// Implementation from here: https://stackoverflow.com/a/23082112/1236990
++
++  /// Essentially, this computes the orthogonalization error, distributes the
++  /// error to the x and y rows, and then performs a Taylor expansion to
++  /// orthogonalize.
++
++  Matrix3 rot = rot_.matrix(), rot_orth;
++
++  // Check if determinant is already 1.
++  // If yes, then return the current Rot3.
++  if (std::fabs(rot.determinant()-1) < 1e-12) return Rot3(rot_);
++
++  Vector3 x = rot.block<1, 3>(0, 0), y = rot.block<1, 3>(1, 0);
++  double error = x.dot(y);
++
++  Vector3 x_ort = x - (error / 2) * y, y_ort = y - (error / 2) * x;
++  Vector3 z_ort = x_ort.cross(y_ort);
++
++  rot_orth.block<1, 3>(0, 0) = 0.5 * (3 - x_ort.dot(x_ort)) * x_ort;
++  rot_orth.block<1, 3>(1, 0) = 0.5 * (3 - y_ort.dot(y_ort)) * y_ort;
++  rot_orth.block<1, 3>(2, 0) = 0.5 * (3 - z_ort.dot(z_ort)) * z_ort;
++
++  return Rot3(rot_orth);
++}
++
++/* ************************************************************************* */
+ Rot3 Rot3::operator*(const Rot3& R2) const {
+   return Rot3(rot_*R2.rot_);
+ }
 --- gtsam-4.1.0.orig/gtsam/geometry/Rot3Q.cpp
 +++ gtsam-4.1.0/gtsam/geometry/Rot3Q.cpp
-@@ -67,10 +67,23 @@ namespace gtsam {
+@@ -67,13 +67,30 @@ namespace gtsam {
    }
  
    /* ************************************************************************* */
@@ -2230,6 +3636,13 @@ Last-Update: 2020-10-02
    }
  
    /* ************************************************************************* */
++  Rot3 Rot3::normalized() const {
++    return Rot3(quaternion_.normalized());
++  }
++  /* ************************************************************************* */
+   Rot3 Rot3::operator*(const Rot3& R2) const {
+     return Rot3(quaternion_ * R2.quaternion_);
+   }
 --- gtsam-4.1.0.orig/gtsam/geometry/tests/testCal3Bundler.cpp
 +++ gtsam-4.1.0/gtsam/geometry/tests/testCal3Bundler.cpp
 @@ -52,12 +52,14 @@ TEST( Cal3Bundler, calibrate )
@@ -2343,7 +3756,7 @@ Last-Update: 2020-10-02
    Matrix6 actualH;
 --- gtsam-4.1.0.orig/gtsam/geometry/tests/testRot3.cpp
 +++ gtsam-4.1.0/gtsam/geometry/tests/testRot3.cpp
-@@ -744,6 +744,173 @@ TEST(Rot3, axisAngle) {
+@@ -744,6 +744,193 @@ TEST(Rot3, axisAngle) {
  }
  
  /* ************************************************************************* */
@@ -2514,11 +3927,82 @@ Last-Update: 2020-10-02
 +}
 +
 +/* ************************************************************************* */
++TEST(Rot3, determinant) {
++  size_t degree = 1;
++  Rot3 R_w0;  // Zero rotation
++  Rot3 R_w1 = Rot3::Ry(degree * M_PI / 180);
++
++  Rot3 R_01, R_w2;
++  double actual, expected = 1.0;
++
++  for (size_t i = 2; i < 360; ++i) {
++    R_01 = R_w0.between(R_w1);
++    R_w2 = R_w1 * R_01;
++    R_w0 = R_w1;
++    R_w1 = R_w2.normalized();
++    actual = R_w2.matrix().determinant();
++
++    EXPECT_DOUBLES_EQUAL(expected, actual, 1e-7);
++  }
++}
++
++/* ************************************************************************* */
  int main() {
    TestResult tr;
    return TestRegistry::runAllTests(tr);
+--- gtsam-4.1.0.orig/gtsam/geometry/tests/testSerializationGeometry.cpp
++++ gtsam-4.1.0/gtsam/geometry/tests/testSerializationGeometry.cpp
+@@ -57,7 +57,7 @@ static StereoCamera cam2(pose3, cal4ptr)
+ static StereoPoint2 spt(1.0, 2.0, 3.0);
+ 
+ /* ************************************************************************* */
+-TEST_DISABLED (Serialization, text_geometry) {
++TEST (Serialization, text_geometry) {
+   EXPECT(equalsObj<gtsam::Point2>(Point2(1.0, 2.0)));
+   EXPECT(equalsObj<gtsam::Pose2>(Pose2(1.0, 2.0, 0.3)));
+   EXPECT(equalsObj<gtsam::Rot2>(Rot2::fromDegrees(30.0)));
+@@ -82,7 +82,7 @@ TEST_DISABLED (Serialization, text_geome
+ }
+ 
+ /* ************************************************************************* */
+-TEST_DISABLED (Serialization, xml_geometry) {
++TEST (Serialization, xml_geometry) {
+   EXPECT(equalsXML<gtsam::Point2>(Point2(1.0, 2.0)));
+   EXPECT(equalsXML<gtsam::Pose2>(Pose2(1.0, 2.0, 0.3)));
+   EXPECT(equalsXML<gtsam::Rot2>(Rot2::fromDegrees(30.0)));
+@@ -106,7 +106,7 @@ TEST_DISABLED (Serialization, xml_geomet
+ }
+ 
+ /* ************************************************************************* */
+-TEST_DISABLED (Serialization, binary_geometry) {
++TEST (Serialization, binary_geometry) {
+   EXPECT(equalsBinary<gtsam::Point2>(Point2(1.0, 2.0)));
+   EXPECT(equalsBinary<gtsam::Pose2>(Pose2(1.0, 2.0, 0.3)));
+   EXPECT(equalsBinary<gtsam::Rot2>(Rot2::fromDegrees(30.0)));
 --- gtsam-4.1.0.orig/gtsam/gtsam.i
 +++ gtsam-4.1.0/gtsam/gtsam.i
+@@ -93,9 +93,9 @@
+  *        - Add "void serializable()" to a class if you only want the class to be serialized as a
+  *          part of a container (such as noisemodel). This version does not require a publicly
+  *          accessible default constructor.
+- *   Forward declarations and class definitions for Cython:
+- *     - Need to specify the base class (both this forward class and base class are declared in an external cython header)
+- *       This is so Cython can generate proper inheritance.
++ *   Forward declarations and class definitions for Pybind:
++ *     - Need to specify the base class (both this forward class and base class are declared in an external Pybind header)
++ *       This is so Pybind can generate proper inheritance.
+  *       Example when wrapping a gtsam-based project:
+  *          // forward declarations
+  *          virtual class gtsam::NonlinearFactor
+@@ -104,7 +104,7 @@
+  *          #include <MyFactor.h>
+  *          virtual class MyFactor : gtsam::NoiseModelFactor {...};
+  *    - *DO NOT* re-define overriden function already declared in the external (forward-declared) base class
+- *        - This will cause an ambiguity problem in Cython pxd header file
++ *        - This will cause an ambiguity problem in Pybind header file
+  */
+ 
+ /**
 @@ -259,124 +259,79 @@ class IndexPair {
    size_t j() const;
  };
@@ -2572,13 +4056,13 @@ Last-Update: 2020-10-02
 -  // Standard constructors
 -  LieScalar();
 -  LieScalar(double d);
--
--  // Standard interface
--  double value() const;
 +class IndexPairVector {
 +  IndexPairVector();
 +  IndexPairVector(const gtsam::IndexPairVector& other);
  
+-  // Standard interface
+-  double value() const;
+-
 -  // Testable
 -  void print(string s) const;
 -  bool equals(const gtsam::LieScalar& expected, double tol) const;
@@ -2618,14 +4102,14 @@ Last-Update: 2020-10-02
 -  // Testable
 -  void print(string s) const;
 -  bool equals(const gtsam::LieVector& expected, double tol) const;
-+gtsam::IndexPairVector IndexPairSetAsArray(gtsam::IndexPairSet& set);
- 
+-
 -  // Group
 -  static gtsam::LieVector identity();
 -  gtsam::LieVector inverse() const;
 -  gtsam::LieVector compose(const gtsam::LieVector& p) const;
 -  gtsam::LieVector between(const gtsam::LieVector& l2) const;
--
++gtsam::IndexPairVector IndexPairSetAsArray(gtsam::IndexPairSet& set);
+ 
 -  // Manifold
 -  size_t dim() const;
 -  gtsam::LieVector retract(Vector v) const;
@@ -2919,7 +4403,13 @@ Last-Update: 2020-10-02
  pair<gtsam::NonlinearFactorGraph*, gtsam::Values*> load2D(string filename,
      gtsam::noiseModel::Diagonal* model, int maxIndex, bool addNoise, bool smart);
  pair<gtsam::NonlinearFactorGraph*, gtsam::Values*> load2D(string filename,
-@@ -2914,6 +2890,13 @@ class BinaryMeasurement {
+@@ -2909,11 +2885,19 @@ class BinaryMeasurement {
+   size_t key1() const;
+   size_t key2() const;
+   T measured() const;
++  gtsam::noiseModel::Base* noiseModel() const;
+ };
+ 
  typedef gtsam::BinaryMeasurement<gtsam::Unit3> BinaryMeasurementUnit3;
  typedef gtsam::BinaryMeasurement<gtsam::Rot3> BinaryMeasurementRot3;
  
@@ -2933,7 +4423,7 @@ Last-Update: 2020-10-02
  #include <gtsam/sfm/ShonanAveraging.h>
  
  // TODO(frank): copy/pasta below until we have integer template paremeters in wrap!
-@@ -2925,6 +2908,7 @@ class ShonanAveragingParameters2 {
+@@ -2925,6 +2909,7 @@ class ShonanAveragingParameters2 {
    void setOptimalityThreshold(double value);
    double getOptimalityThreshold() const;
    void setAnchor(size_t index, const gtsam::Rot2& value);
@@ -2941,7 +4431,7 @@ Last-Update: 2020-10-02
    void setAnchorWeight(double value);
    double getAnchorWeight() const;
    void setKarcherWeight(double value);
-@@ -2940,6 +2924,7 @@ class ShonanAveragingParameters3 {
+@@ -2940,6 +2925,7 @@ class ShonanAveragingParameters3 {
    void setOptimalityThreshold(double value);
    double getOptimalityThreshold() const;
    void setAnchor(size_t index, const gtsam::Rot3& value);
@@ -2949,10 +4439,30 @@ Last-Update: 2020-10-02
    void setAnchorWeight(double value);
    double getAnchorWeight() const;
    void setKarcherWeight(double value);
-@@ -3033,6 +3018,16 @@ class ShonanAveraging3 {
+@@ -3033,6 +3019,36 @@ class ShonanAveraging3 {
    pair<gtsam::Values, double> run(const gtsam::Values& initial, size_t min_p, size_t max_p) const;
  };
  
++#include <gtsam/sfm/MFAS.h>
++
++class KeyPairDoubleMap {
++  KeyPairDoubleMap();
++  KeyPairDoubleMap(const gtsam::KeyPairDoubleMap& other);
++
++  size_t size() const;
++  bool empty() const;
++  void clear();
++  size_t at(const pair<size_t, size_t>& keypair) const;
++};
++
++class MFAS {
++  MFAS(const gtsam::BinaryMeasurementsUnit3& relativeTranslations,
++       const gtsam::Unit3& projectionDirection);
++
++  gtsam::KeyPairDoubleMap computeOutlierWeights() const;
++  gtsam::KeyVector computeOrdering() const;
++};
++
 +#include <gtsam/sfm/TranslationRecovery.h>
 +class TranslationRecovery {
 +  TranslationRecovery(const gtsam::BinaryMeasurementsUnit3 &relativeTranslations,
@@ -2966,6 +4476,39 @@ Last-Update: 2020-10-02
  //*************************************************************************
  // Navigation
  //*************************************************************************
+--- gtsam-4.1.0.orig/gtsam/navigation/AHRSFactor.h
++++ gtsam-4.1.0/gtsam/navigation/AHRSFactor.h
+@@ -42,7 +42,7 @@ class GTSAM_EXPORT PreintegratedAhrsMeas
+ 
+  public:
+ 
+-  /// Default constructor, only for serialization and Cython wrapper
++  /// Default constructor, only for serialization and wrappers
+   PreintegratedAhrsMeasurements() {}
+ 
+   /**
+--- gtsam-4.1.0.orig/gtsam/navigation/CombinedImuFactor.h
++++ gtsam-4.1.0/gtsam/navigation/CombinedImuFactor.h
+@@ -145,7 +145,7 @@ public:
+   /// @name Constructors
+   /// @{
+ 
+-  /// Default constructor only for serialization and Cython wrapper
++  /// Default constructor only for serialization and wrappers
+   PreintegratedCombinedMeasurements() {
+     preintMeasCov_.setZero();
+   }
+--- gtsam-4.1.0.orig/gtsam/navigation/ImuFactor.h
++++ gtsam-4.1.0/gtsam/navigation/ImuFactor.h
+@@ -80,7 +80,7 @@ protected:
+ 
+ public:
+ 
+-  /// Default constructor for serialization and Cython wrapper
++  /// Default constructor for serialization and wrappers
+   PreintegratedImuMeasurements() {
+     preintMeasCov_.setZero();
+   }
 --- gtsam-4.1.0.orig/gtsam/navigation/NavState.cpp
 +++ gtsam-4.1.0/gtsam/navigation/NavState.cpp
 @@ -89,8 +89,8 @@ Matrix7 NavState::matrix() const {
@@ -3101,6 +4644,26 @@ Last-Update: 2020-10-02
  };
  
  }  // namespace gtsam
+--- gtsam-4.1.0.orig/gtsam/nonlinear/Marginals.h
++++ gtsam-4.1.0/gtsam/nonlinear/Marginals.h
+@@ -48,7 +48,7 @@ protected:
+ 
+ public:
+ 
+-  /// Default constructor only for Cython wrapper
++  /// Default constructor only for wrappers
+   Marginals(){}
+ 
+   /** Construct a marginals class from a nonlinear factor graph.
+@@ -156,7 +156,7 @@ protected:
+   FastMap<Key, size_t> indices_;
+ 
+ public:
+-  /// Default constructor only for Cython wrapper
++  /// Default constructor only for wrappers
+   JointMarginal() {}
+ 
+   /** Access a block, corresponding to a pair of variables, of the joint
 --- gtsam-4.1.0.orig/gtsam/nonlinear/NonlinearFactorGraph.cpp
 +++ gtsam-4.1.0/gtsam/nonlinear/NonlinearFactorGraph.cpp
 @@ -205,42 +205,49 @@ void NonlinearFactorGraph::saveGraph(std
@@ -3177,7 +4740,7 @@ Last-Update: 2020-10-02
      }
 --- /dev/null
 +++ gtsam-4.1.0/gtsam/sfm/MFAS.cpp
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,171 @@
 +/**
 + *  @file  MFAS.cpp
 + *  @brief Source file for the MFAS class
@@ -3291,10 +4854,8 @@ Last-Update: 2020-10-02
 +  graph.erase(node);
 +}
 +
-+MFAS::MFAS(const std::shared_ptr<vector<Key>>& nodes,
-+           const TranslationEdges& relativeTranslations,
-+           const Unit3& projectionDirection)
-+    : nodes_(nodes) {
++MFAS::MFAS(const TranslationEdges& relativeTranslations,
++           const Unit3& projectionDirection) {
 +  // Iterate over edges, obtain weights by projecting
 +  // their relativeTranslations along the projection direction
 +  for (const auto& measurement : relativeTranslations) {
@@ -3353,7 +4914,7 @@ Last-Update: 2020-10-02
 +}
 --- /dev/null
 +++ gtsam-4.1.0/gtsam/sfm/MFAS.h
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,101 @@
 +/* ----------------------------------------------------------------------------
 +
 + * GTSAM Copyright 2010-2020, Georgia Tech Research Corporation,
@@ -3412,40 +4973,28 @@ Last-Update: 2020-10-02
 +  using TranslationEdges = std::vector<BinaryMeasurement<Unit3>>;
 +
 + private:
-+  // pointer to nodes in the graph
-+  const std::shared_ptr<std::vector<Key>> nodes_;
-+
 +  // edges with a direction such that all weights are positive
 +  // i.e, edges that originally had negative weights are flipped
 +  std::map<KeyPair, double> edgeWeights_;
 +
 + public:
 +  /**
-+   * @brief Construct from the nodes in a graph and weighted directed edges
++   * @brief Construct from the weighted directed edges
 +   * between the nodes. Each node is identified by a Key.
-+   * A shared pointer to the nodes is used as input parameter
-+   * because, MFAS ordering is usually used to compute the ordering of a
-+   * large graph that is already stored in memory. It is unnecessary to make a
-+   * copy of the nodes in this class.
-+   * @param nodes: Nodes in the graph
 +   * @param edgeWeights: weights of edges in the graph
 +   */
-+  MFAS(const std::shared_ptr<std::vector<Key>> &nodes,
-+       const std::map<KeyPair, double> &edgeWeights)
-+      : nodes_(nodes), edgeWeights_(edgeWeights) {}
++  MFAS(const std::map<KeyPair, double> &edgeWeights)
++      : edgeWeights_(edgeWeights) {}
 +
 +  /**
 +   * @brief Constructor to be used in the context of translation averaging.
 +   * Here, the nodes of the graph are cameras in 3D and the edges have a unit
 +   * translation direction between them. The weights of the edges is computed by
 +   * projecting them along a projection direction.
-+   * @param nodes cameras in the epipolar graph (each camera is identified by a
-+   * Key)
 +   * @param relativeTranslations translation directions between the cameras
 +   * @param projectionDirection direction in which edges are to be projected
 +   */
-+  MFAS(const std::shared_ptr<std::vector<Key>> &nodes,
-+       const TranslationEdges &relativeTranslations,
++  MFAS(const TranslationEdges &relativeTranslations,
 +       const Unit3 &projectionDirection);
 +
 +  /**
@@ -3455,7 +5004,7 @@ Last-Update: 2020-10-02
 +  std::vector<Key> computeOrdering() const;
 +
 +  /**
-+   * @brief Computes the "outlier weights" of the graph. We define the outlier
++   * @brief Computes the outlier weights of the graph. We define the outlier
 +   * weight of a edge to be zero if the edge is an inlier and the magnitude of
 +   * its edgeWeight if it is an outlier. This function internally calls
 +   * computeOrdering and uses the obtained ordering to identify outlier edges.
@@ -3463,6 +5012,8 @@ Last-Update: 2020-10-02
 +   */
 +  std::map<KeyPair, double> computeOutlierWeights() const;
 +};
++
++typedef std::map<std::pair<Key, Key>, double> KeyPairDoubleMap;
 +
 +}  // namespace gtsam
 --- gtsam-4.1.0.orig/gtsam/sfm/ShonanAveraging.cpp
@@ -4066,7 +5617,7 @@ Last-Update: 2020-10-02
     * @brief Create random initial translations.
 --- /dev/null
 +++ gtsam-4.1.0/gtsam/sfm/tests/testMFAS.cpp
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,104 @@
 +/**
 + *  @file  testMFAS.cpp
 + *  @brief Unit tests for the MFAS class
@@ -4075,7 +5626,7 @@ Last-Update: 2020-10-02
 + */
 +
 +#include <gtsam/sfm/MFAS.h>
-+#include <iostream>
++
 +#include <CppUnitLite/TestHarness.h>
 +
 +using namespace std;
@@ -4108,14 +5659,13 @@ Last-Update: 2020-10-02
 +  for (size_t i = 0; i < edges.size(); i++) {
 +    edgeWeights[edges[i]] = weights[i];
 +  }
-+  cout << "returning edge weights " << edgeWeights.size() << endl;
 +  return edgeWeights;
 +}
 +
 +// test the ordering and the outlierWeights function using weights2 - outlier
 +// edge is rejected when projected in a direction that gives weights2
 +TEST(MFAS, OrderingWeights2) {
-+  MFAS mfas_obj(make_shared<vector<Key>>(nodes), getEdgeWeights(edges, weights2));
++  MFAS mfas_obj(getEdgeWeights(edges, weights2));
 +
 +  vector<Key> ordered_nodes = mfas_obj.computeOrdering();
 +
@@ -4145,7 +5695,7 @@ Last-Update: 2020-10-02
 +// weights1 (outlier edge is accepted when projected in a direction that
 +// produces weights1)
 +TEST(MFAS, OrderingWeights1) {
-+  MFAS mfas_obj(make_shared<vector<Key>>(nodes), getEdgeWeights(edges, weights1));
++  MFAS mfas_obj(getEdgeWeights(edges, weights1));
 +
 +  vector<Key> ordered_nodes = mfas_obj.computeOrdering();
 +
@@ -4263,6 +5813,17 @@ Last-Update: 2020-10-02
  #ifdef GTSAM_ALLOW_DEPRECATED_SINCE_V41
  inline boost::optional<IndexedPose> parseVertex(std::istream &is,
                                                  const std::string &tag) {
+--- gtsam-4.1.0.orig/gtsam_extra.cmake.in
++++ gtsam-4.1.0/gtsam_extra.cmake.in
+@@ -7,8 +7,3 @@ set (GTSAM_VERSION_STRING "@GTSAM_VERSIO
+ 
+ set (GTSAM_USE_TBB @GTSAM_USE_TBB@)
+ set (GTSAM_DEFAULT_ALLOCATOR @GTSAM_DEFAULT_ALLOCATOR@)
+-
+-if("@GTSAM_INSTALL_CYTHON_TOOLBOX@")
+-  list(APPEND GTSAM_CYTHON_INSTALL_PATH "@GTSAM_CYTHON_INSTALL_PATH@")
+-  list(APPEND GTSAM_EIGENCY_INSTALL_PATH "@GTSAM_EIGENCY_INSTALL_PATH@")
+-endif()
 --- gtsam-4.1.0.orig/gtsam_unstable/geometry/Similarity3.cpp
 +++ gtsam-4.1.0/gtsam_unstable/geometry/Similarity3.cpp
 @@ -19,9 +19,68 @@
@@ -4678,6 +6239,878 @@ Last-Update: 2020-10-02
  };
  
  #include <gtsam_unstable/dynamics/SimpleHelicopter.h>
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/ActiveSetSolver-inl.h
++++ gtsam-4.1.0/gtsam_unstable/linear/ActiveSetSolver-inl.h
+@@ -149,7 +149,7 @@ Template JacobianFactor::shared_ptr This
+     // to compute the least-square approximation of dual variables
+     return boost::make_shared<JacobianFactor>(Aterms, b);
+   } else {
+-    return boost::make_shared<JacobianFactor>();
++    return nullptr;
+   }
+ }
+ 
+@@ -165,14 +165,13 @@ Template JacobianFactor::shared_ptr This
+  *  if lambda = 0  you are on the constraint
+  *  if lambda > 0  you are violating the constraint.
+  */
+-Template GaussianFactorGraph::shared_ptr This::buildDualGraph(
++Template GaussianFactorGraph This::buildDualGraph(
+     const InequalityFactorGraph& workingSet, const VectorValues& delta) const {
+-  GaussianFactorGraph::shared_ptr dualGraph(new GaussianFactorGraph());
++  GaussianFactorGraph dualGraph;
+   for (Key key : constrainedKeys_) {
+     // Each constrained key becomes a factor in the dual graph
+-    JacobianFactor::shared_ptr dualFactor =
+-        createDualFactor(key, workingSet, delta);
+-    if (!dualFactor->empty()) dualGraph->push_back(dualFactor);
++    auto dualFactor = createDualFactor(key, workingSet, delta);
++    if (dualFactor) dualGraph.push_back(dualFactor);
+   }
+   return dualGraph;
+ }
+@@ -193,19 +192,16 @@ This::buildWorkingGraph(const Inequality
+ Template typename This::State This::iterate(
+     const typename This::State& state) const {
+   // Algorithm 16.3 from Nocedal06book.
+-  // Solve with the current working set eqn 16.39, but instead of solving for p
+-  // solve for x
+-  GaussianFactorGraph workingGraph =
+-      buildWorkingGraph(state.workingSet, state.values);
++  // Solve with the current working set eqn 16.39, but solve for x not p
++  auto workingGraph = buildWorkingGraph(state.workingSet, state.values);
+   VectorValues newValues = workingGraph.optimize();
+   // If we CAN'T move further
+   // if p_k = 0 is the original condition, modified by Duy to say that the state
+   // update is zero.
+   if (newValues.equals(state.values, 1e-7)) {
+     // Compute lambda from the dual graph
+-    GaussianFactorGraph::shared_ptr dualGraph = buildDualGraph(state.workingSet,
+-        newValues);
+-    VectorValues duals = dualGraph->optimize();
++    auto dualGraph = buildDualGraph(state.workingSet, newValues);
++    VectorValues duals = dualGraph.optimize();
+     int leavingFactor = identifyLeavingConstraint(state.workingSet, duals);
+     // If all inequality constraints are satisfied: We have the solution!!
+     if (leavingFactor < 0) {
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/ActiveSetSolver.h
++++ gtsam-4.1.0/gtsam_unstable/linear/ActiveSetSolver.h
+@@ -154,8 +154,8 @@ protected:
+ public: /// Just for testing...
+ 
+   /// Builds a dual graph from the current working set.
+-  GaussianFactorGraph::shared_ptr buildDualGraph(
+-      const InequalityFactorGraph& workingSet, const VectorValues& delta) const;
++  GaussianFactorGraph buildDualGraph(const InequalityFactorGraph &workingSet,
++                                     const VectorValues &delta) const;
+ 
+   /**
+    * Build a working graph of cost, equality and active inequality constraints
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/EqualityFactorGraph.h
++++ gtsam-4.1.0/gtsam_unstable/linear/EqualityFactorGraph.h
+@@ -31,6 +31,11 @@ class EqualityFactorGraph: public Factor
+ public:
+   typedef boost::shared_ptr<EqualityFactorGraph> shared_ptr;
+ 
++  /// Add a linear inequality, forwards arguments to LinearInequality.
++  template <class... Args> void add(Args &&... args) {
++    emplace_shared<LinearEquality>(std::forward<Args>(args)...);
++  }
++
+   /// Compute error of a guess.
+   double error(const VectorValues& x) const {
+     double total_error = 0.;
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/InequalityFactorGraph.h
++++ gtsam-4.1.0/gtsam_unstable/linear/InequalityFactorGraph.h
+@@ -47,6 +47,11 @@ public:
+     return Base::equals(other, tol);
+   }
+ 
++  /// Add a linear inequality, forwards arguments to LinearInequality.
++  template <class... Args> void add(Args &&... args) {
++    emplace_shared<LinearInequality>(std::forward<Args>(args)...);
++  }
++
+   /**
+    * Compute error of a guess.
+    * Infinity error if it violates an inequality; zero otherwise. */
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/LPInitSolver.h
++++ gtsam-4.1.0/gtsam_unstable/linear/LPInitSolver.h
+@@ -21,7 +21,6 @@
+ 
+ #include <gtsam_unstable/linear/LP.h>
+ #include <gtsam/linear/GaussianFactorGraph.h>
+-#include <CppUnitLite/Test.h>
+ 
+ namespace gtsam {
+ /**
+@@ -83,7 +82,7 @@ private:
+       const InequalityFactorGraph& inequalities) const;
+ 
+   // friend class for unit-testing private methods
+-  FRIEND_TEST(LPInitSolver, initialization);
++  friend class LPInitSolverInitializationTest;
+ };
+ 
+ }
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/tests/testLPSolver.cpp
++++ gtsam-4.1.0/gtsam_unstable/linear/tests/testLPSolver.cpp
+@@ -16,21 +16,23 @@
+  * @author Duy-Nguyen Ta
+  */
+ 
++#include <gtsam_unstable/linear/LPInitSolver.h>
++#include <gtsam_unstable/linear/LPSolver.h>
++
+ #include <gtsam/base/Testable.h>
+-#include <gtsam/inference/Symbol.h>
+ #include <gtsam/inference/FactorGraph-inst.h>
+-#include <gtsam/linear/VectorValues.h>
++#include <gtsam/inference/Symbol.h>
+ #include <gtsam/linear/GaussianFactorGraph.h>
++#include <gtsam/linear/VectorValues.h>
+ #include <gtsam_unstable/linear/EqualityFactorGraph.h>
+ #include <gtsam_unstable/linear/InequalityFactorGraph.h>
+ #include <gtsam_unstable/linear/InfeasibleInitialValues.h>
++
+ #include <CppUnitLite/TestHarness.h>
++
+ #include <boost/foreach.hpp>
+ #include <boost/range/adaptor/map.hpp>
+ 
+-#include <gtsam_unstable/linear/LPSolver.h>
+-#include <gtsam_unstable/linear/LPInitSolver.h>
+-
+ using namespace std;
+ using namespace gtsam;
+ using namespace gtsam::symbol_shorthand;
+@@ -47,37 +49,27 @@ static const Vector kOne = Vector::Ones(
+  */
+ LP simpleLP1() {
+   LP lp;
+-  lp.cost = LinearCost(1, Vector2(-1., -1.));  // min -x1-x2 (max x1+x2)
+-  lp.inequalities.push_back(
+-      LinearInequality(1, Vector2(-1, 0), 0, 1));  // x1 >= 0
+-  lp.inequalities.push_back(
+-      LinearInequality(1, Vector2(0, -1), 0, 2));  //  x2 >= 0
+-  lp.inequalities.push_back(
+-      LinearInequality(1, Vector2(1, 2), 4, 3));  //  x1 + 2*x2 <= 4
+-  lp.inequalities.push_back(
+-      LinearInequality(1, Vector2(4, 2), 12, 4));  //  4x1 + 2x2 <= 12
+-  lp.inequalities.push_back(
+-      LinearInequality(1, Vector2(-1, 1), 1, 5));  //  -x1 + x2 <= 1
++  lp.cost = LinearCost(1, Vector2(-1., -1.));   // min -x1-x2 (max x1+x2)
++  lp.inequalities.add(1, Vector2(-1, 0), 0, 1); // x1 >= 0
++  lp.inequalities.add(1, Vector2(0, -1), 0, 2); //  x2 >= 0
++  lp.inequalities.add(1, Vector2(1, 2), 4, 3);  //  x1 + 2*x2 <= 4
++  lp.inequalities.add(1, Vector2(4, 2), 12, 4); //  4x1 + 2x2 <= 12
++  lp.inequalities.add(1, Vector2(-1, 1), 1, 5); //  -x1 + x2 <= 1
+   return lp;
+ }
+ 
+ /* ************************************************************************* */
+ namespace gtsam {
+ 
+-TEST(LPInitSolver, infinite_loop_single_var) {
+-  LP initchecker;
+-  initchecker.cost = LinearCost(1, Vector3(0, 0, 1));  // min alpha
+-  initchecker.inequalities.push_back(
+-      LinearInequality(1, Vector3(-2, -1, -1), -2, 1));  //-2x-y-alpha <= -2
+-  initchecker.inequalities.push_back(
+-      LinearInequality(1, Vector3(-1, 2, -1), 6, 2));  // -x+2y-alpha <= 6
+-  initchecker.inequalities.push_back(
+-      LinearInequality(1, Vector3(-1, 0, -1), 0, 3));  // -x - alpha <= 0
+-  initchecker.inequalities.push_back(
+-      LinearInequality(1, Vector3(1, 0, -1), 20, 4));  // x - alpha <= 20
+-  initchecker.inequalities.push_back(
+-      LinearInequality(1, Vector3(0, -1, -1), 0, 5));  // -y - alpha <= 0
+-  LPSolver solver(initchecker);
++TEST(LPInitSolver, InfiniteLoopSingleVar) {
++  LP lp;
++  lp.cost = LinearCost(1, Vector3(0, 0, 1));          // min alpha
++  lp.inequalities.add(1, Vector3(-2, -1, -1), -2, 1); //-2x-y-a <= -2
++  lp.inequalities.add(1, Vector3(-1, 2, -1), 6, 2);   // -x+2y-a <= 6
++  lp.inequalities.add(1, Vector3(-1, 0, -1), 0, 3);   // -x - a <= 0
++  lp.inequalities.add(1, Vector3(1, 0, -1), 20, 4);   // x - a <= 20
++  lp.inequalities.add(1, Vector3(0, -1, -1), 0, 5);   // -y - a <= 0
++  LPSolver solver(lp);
+   VectorValues starter;
+   starter.insert(1, Vector3(0, 0, 2));
+   VectorValues results, duals;
+@@ -87,25 +79,23 @@ TEST(LPInitSolver, infinite_loop_single_
+   CHECK(assert_equal(results, expected, 1e-7));
+ }
+ 
+-TEST(LPInitSolver, infinite_loop_multi_var) {
+-  LP initchecker;
++TEST(LPInitSolver, InfiniteLoopMultiVar) {
++  LP lp;
+   Key X = symbol('X', 1);
+   Key Y = symbol('Y', 1);
+   Key Z = symbol('Z', 1);
+-  initchecker.cost = LinearCost(Z, kOne);  // min alpha
+-  initchecker.inequalities.push_back(
+-      LinearInequality(X, -2.0 * kOne, Y, -1.0 * kOne, Z, -1.0 * kOne, -2,
+-                       1));  //-2x-y-alpha <= -2
+-  initchecker.inequalities.push_back(
+-      LinearInequality(X, -1.0 * kOne, Y, 2.0 * kOne, Z, -1.0 * kOne, 6,
+-                       2));  // -x+2y-alpha <= 6
+-  initchecker.inequalities.push_back(LinearInequality(
+-      X, -1.0 * kOne, Z, -1.0 * kOne, 0, 3));  // -x - alpha <= 0
+-  initchecker.inequalities.push_back(LinearInequality(
+-      X, 1.0 * kOne, Z, -1.0 * kOne, 20, 4));  // x - alpha <= 20
+-  initchecker.inequalities.push_back(LinearInequality(
+-      Y, -1.0 * kOne, Z, -1.0 * kOne, 0, 5));  // -y - alpha <= 0
+-  LPSolver solver(initchecker);
++  lp.cost = LinearCost(Z, kOne); // min alpha
++  lp.inequalities.add(X, -2.0 * kOne, Y, -1.0 * kOne, Z, -1.0 * kOne, -2,
++                      1); //-2x-y-alpha <= -2
++  lp.inequalities.add(X, -1.0 * kOne, Y, 2.0 * kOne, Z, -1.0 * kOne, 6,
++                      2); // -x+2y-alpha <= 6
++  lp.inequalities.add(X, -1.0 * kOne, Z, -1.0 * kOne, 0,
++                      3); // -x - alpha <= 0
++  lp.inequalities.add(X, 1.0 * kOne, Z, -1.0 * kOne, 20,
++                      4); // x - alpha <= 20
++  lp.inequalities.add(Y, -1.0 * kOne, Z, -1.0 * kOne, 0,
++                      5); // -y - alpha <= 0
++  LPSolver solver(lp);
+   VectorValues starter;
+   starter.insert(X, kZero);
+   starter.insert(Y, kZero);
+@@ -119,7 +109,7 @@ TEST(LPInitSolver, infinite_loop_multi_v
+   CHECK(assert_equal(results, expected, 1e-7));
+ }
+ 
+-TEST(LPInitSolver, initialization) {
++TEST(LPInitSolver, Initialization) {
+   LP lp = simpleLP1();
+   LPInitSolver initSolver(lp);
+ 
+@@ -138,19 +128,19 @@ TEST(LPInitSolver, initialization) {
+   LP::shared_ptr initLP = initSolver.buildInitialLP(yKey);
+   LP expectedInitLP;
+   expectedInitLP.cost = LinearCost(yKey, kOne);
+-  expectedInitLP.inequalities.push_back(LinearInequality(
+-      1, Vector2(-1, 0), 2, Vector::Constant(1, -1), 0, 1));  // -x1 - y <= 0
+-  expectedInitLP.inequalities.push_back(LinearInequality(
+-      1, Vector2(0, -1), 2, Vector::Constant(1, -1), 0, 2));  // -x2 - y <= 0
+-  expectedInitLP.inequalities.push_back(
+-      LinearInequality(1, Vector2(1, 2), 2, Vector::Constant(1, -1), 4,
+-                       3));  //  x1 + 2*x2 - y <= 4
+-  expectedInitLP.inequalities.push_back(
+-      LinearInequality(1, Vector2(4, 2), 2, Vector::Constant(1, -1), 12,
+-                       4));  //  4x1 + 2x2 - y <= 12
+-  expectedInitLP.inequalities.push_back(
+-      LinearInequality(1, Vector2(-1, 1), 2, Vector::Constant(1, -1), 1,
+-                       5));  //  -x1 + x2 - y <= 1
++  expectedInitLP.inequalities.add(1, Vector2(-1, 0), 2, Vector::Constant(1, -1),
++                                  0, 1); // -x1 - y <= 0
++  expectedInitLP.inequalities.add(1, Vector2(0, -1), 2, Vector::Constant(1, -1),
++                                  0, 2); // -x2 - y <= 0
++  expectedInitLP.inequalities.add(1, Vector2(1, 2), 2, Vector::Constant(1, -1),
++                                  4,
++                                  3); //  x1 + 2*x2 - y <= 4
++  expectedInitLP.inequalities.add(1, Vector2(4, 2), 2, Vector::Constant(1, -1),
++                                  12,
++                                  4); //  4x1 + 2x2 - y <= 12
++  expectedInitLP.inequalities.add(1, Vector2(-1, 1), 2, Vector::Constant(1, -1),
++                                  1,
++                                  5); //  -x1 + x2 - y <= 1
+   CHECK(assert_equal(expectedInitLP, *initLP, 1e-10));
+   LPSolver lpSolveInit(*initLP);
+   VectorValues xy0(x0);
+@@ -164,7 +154,7 @@ TEST(LPInitSolver, initialization) {
+   VectorValues x = initSolver.solve();
+   CHECK(lp.isFeasible(x));
+ }
+-}
++} // namespace gtsam
+ 
+ /* ************************************************************************* */
+ /**
+@@ -173,28 +163,24 @@ TEST(LPInitSolver, initialization) {
+  *  x - y = 5
+  *  x + 2y = 6
+  */
+-TEST(LPSolver, overConstrainedLinearSystem) {
++TEST(LPSolver, OverConstrainedLinearSystem) {
+   GaussianFactorGraph graph;
+   Matrix A1 = Vector3(1, 1, 1);
+   Matrix A2 = Vector3(1, -1, 2);
+   Vector b = Vector3(1, 5, 6);
+-  JacobianFactor factor(1, A1, 2, A2, b, noiseModel::Constrained::All(3));
+-  graph.push_back(factor);
++  graph.add(1, A1, 2, A2, b, noiseModel::Constrained::All(3));
+ 
+   VectorValues x = graph.optimize();
+   // This check confirms that gtsam linear constraint solver can't handle
+   // over-constrained system
+-  CHECK(factor.error(x) != 0.0);
++  CHECK(graph[0]->error(x) != 0.0);
+ }
+ 
+ TEST(LPSolver, overConstrainedLinearSystem2) {
+   GaussianFactorGraph graph;
+-  graph.emplace_shared<JacobianFactor>(1, I_1x1, 2, I_1x1, kOne,
+-                                 noiseModel::Constrained::All(1));
+-  graph.emplace_shared<JacobianFactor>(1, I_1x1, 2, -I_1x1, 5 * kOne,
+-                                 noiseModel::Constrained::All(1));
+-  graph.emplace_shared<JacobianFactor>(1, I_1x1, 2, 2 * I_1x1, 6 * kOne,
+-                                 noiseModel::Constrained::All(1));
++  graph.add(1, I_1x1, 2, I_1x1, kOne, noiseModel::Constrained::All(1));
++  graph.add(1, I_1x1, 2, -I_1x1, 5 * kOne, noiseModel::Constrained::All(1));
++  graph.add(1, I_1x1, 2, 2 * I_1x1, 6 * kOne, noiseModel::Constrained::All(1));
+   VectorValues x = graph.optimize();
+   // This check confirms that gtsam linear constraint solver can't handle
+   // over-constrained system
+@@ -202,7 +188,7 @@ TEST(LPSolver, overConstrainedLinearSyst
+ }
+ 
+ /* ************************************************************************* */
+-TEST(LPSolver, simpleTest1) {
++TEST(LPSolver, SimpleTest1) {
+   LP lp = simpleLP1();
+   LPSolver lpSolver(lp);
+   VectorValues init;
+@@ -222,7 +208,7 @@ TEST(LPSolver, simpleTest1) {
+ }
+ 
+ /* ************************************************************************* */
+-TEST(LPSolver, testWithoutInitialValues) {
++TEST(LPSolver, TestWithoutInitialValues) {
+   LP lp = simpleLP1();
+   LPSolver lpSolver(lp);
+   VectorValues result, duals, expectedResult;
+--- gtsam-4.1.0.orig/gtsam_unstable/linear/tests/testQPSolver.cpp
++++ gtsam-4.1.0/gtsam_unstable/linear/tests/testQPSolver.cpp
+@@ -17,10 +17,12 @@
+  * @author Ivan Dario Jimenez
+  */
+ 
++#include <gtsam_unstable/linear/QPSParser.h>
++#include <gtsam_unstable/linear/QPSolver.h>
++
+ #include <gtsam/base/Testable.h>
+ #include <gtsam/inference/Symbol.h>
+-#include <gtsam_unstable/linear/QPSolver.h>
+-#include <gtsam_unstable/linear/QPSParser.h>
++
+ #include <CppUnitLite/TestHarness.h>
+ 
+ using namespace std;
+@@ -40,15 +42,15 @@ QP createTestCase() {
+   // Hence, we have G11=2, G12 = -1, g1 = +3, G22 = 2, g2 = 0, f = 10
+   //TODO:  THIS TEST MIGHT BE WRONG : the last parameter  might be 5 instead of 10 because the form of the equation
+   // Should be 0.5x'Gx + gx + f : Nocedal 449
+-  qp.cost.push_back(
+-      HessianFactor(X(1), X(2), 2.0 * I_1x1, -I_1x1, 3.0 * I_1x1, 2.0 * I_1x1,
+-          Z_1x1, 10.0));
++  qp.cost.push_back(HessianFactor(X(1), X(2), 2.0 * I_1x1, -I_1x1, 3.0 * I_1x1,
++                                  2.0 * I_1x1, Z_1x1, 10.0));
+ 
+   // Inequality constraints
+-  qp.inequalities.push_back(LinearInequality(X(1), I_1x1, X(2), I_1x1, 2, 0)); // x1 + x2 <= 2 --> x1 + x2 -2 <= 0, --> b=2
+-  qp.inequalities.push_back(LinearInequality(X(1), -I_1x1, 0, 1)); // -x1     <= 0
+-  qp.inequalities.push_back(LinearInequality(X(2), -I_1x1, 0, 2)); //    -x2  <= 0
+-  qp.inequalities.push_back(LinearInequality(X(1), I_1x1, 1.5, 3)); // x1      <= 3/2
++  qp.inequalities.add(X(1), I_1x1, X(2), I_1x1, 2,
++                      0); // x1 + x2 <= 2 --> x1 + x2 -2 <= 0, --> b=2
++  qp.inequalities.add(X(1), -I_1x1, 0, 1);  // -x1     <= 0
++  qp.inequalities.add(X(2), -I_1x1, 0, 2);  //    -x2  <= 0
++  qp.inequalities.add(X(1), I_1x1, 1.5, 3); // x1      <= 3/2
+ 
+   return qp;
+ }
+@@ -94,16 +96,15 @@ QP createEqualityConstrainedTest() {
+   // Note the Hessian encodes:
+   //        0.5*x1'*G11*x1 + x1'*G12*x2 + 0.5*x2'*G22*x2 - x1'*g1 - x2'*g2 + 0.5*f
+   // Hence, we have G11=2, G12 = 0, g1 = 0, G22 = 2, g2 = 0, f = 0
+-  qp.cost.push_back(
+-      HessianFactor(X(1), X(2), 2.0 * I_1x1, Z_1x1, Z_1x1, 2.0 * I_1x1, Z_1x1,
+-          0.0));
++  qp.cost.push_back(HessianFactor(X(1), X(2), 2.0 * I_1x1, Z_1x1, Z_1x1,
++                                  2.0 * I_1x1, Z_1x1, 0.0));
+ 
+   // Equality constraints
+   // x1 + x2 = 1 --> x1 + x2 -1 = 0, hence we negate the b vector
+   Matrix A1 = I_1x1;
+   Matrix A2 = I_1x1;
+   Vector b = -kOne;
+-  qp.equalities.push_back(LinearEquality(X(1), A1, X(2), A2, b, 0));
++  qp.equalities.add(X(1), A1, X(2), A2, b, 0);
+ 
+   return qp;
+ }
+@@ -118,9 +119,8 @@ TEST(QPSolver, dual) {
+ 
+   QPSolver solver(qp);
+ 
+-  GaussianFactorGraph::shared_ptr dualGraph = solver.buildDualGraph(
+-      qp.inequalities, initialValues);
+-  VectorValues dual = dualGraph->optimize();
++  auto dualGraph = solver.buildDualGraph(qp.inequalities, initialValues);
++  VectorValues dual = dualGraph.optimize();
+   VectorValues expectedDual;
+   expectedDual.insert(0, (Vector(1) << 2.0).finished());
+   CHECK(assert_equal(expectedDual, dual, 1e-10));
+@@ -135,19 +135,19 @@ TEST(QPSolver, indentifyActiveConstraint
+   currentSolution.insert(X(1), Z_1x1);
+   currentSolution.insert(X(2), Z_1x1);
+ 
+-  InequalityFactorGraph workingSet = solver.identifyActiveConstraints(
+-      qp.inequalities, currentSolution);
++  auto workingSet =
++      solver.identifyActiveConstraints(qp.inequalities, currentSolution);
+ 
+   CHECK(!workingSet.at(0)->active()); // inactive
+-  CHECK(workingSet.at(1)->active());// active
+-  CHECK(workingSet.at(2)->active());// active
+-  CHECK(!workingSet.at(3)->active());// inactive
++  CHECK(workingSet.at(1)->active());  // active
++  CHECK(workingSet.at(2)->active());  // active
++  CHECK(!workingSet.at(3)->active()); // inactive
+ 
+   VectorValues solution = solver.buildWorkingGraph(workingSet).optimize();
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(X(1), kZero);
+-  expectedSolution.insert(X(2), kZero);
+-  CHECK(assert_equal(expectedSolution, solution, 1e-100));
++  VectorValues expected;
++  expected.insert(X(1), kZero);
++  expected.insert(X(2), kZero);
++  CHECK(assert_equal(expected, solution, 1e-100));
+ }
+ 
+ /* ************************************************************************* */
+@@ -159,24 +159,24 @@ TEST(QPSolver, iterate) {
+   currentSolution.insert(X(1), Z_1x1);
+   currentSolution.insert(X(2), Z_1x1);
+ 
+-  std::vector<VectorValues> expectedSolutions(4), expectedDuals(4);
+-  expectedSolutions[0].insert(X(1), kZero);
+-  expectedSolutions[0].insert(X(2), kZero);
++  std::vector<VectorValues> expected(4), expectedDuals(4);
++  expected[0].insert(X(1), kZero);
++  expected[0].insert(X(2), kZero);
+   expectedDuals[0].insert(1, (Vector(1) << 3).finished());
+   expectedDuals[0].insert(2, kZero);
+ 
+-  expectedSolutions[1].insert(X(1), (Vector(1) << 1.5).finished());
+-  expectedSolutions[1].insert(X(2), kZero);
++  expected[1].insert(X(1), (Vector(1) << 1.5).finished());
++  expected[1].insert(X(2), kZero);
+   expectedDuals[1].insert(3, (Vector(1) << 1.5).finished());
+ 
+-  expectedSolutions[2].insert(X(1), (Vector(1) << 1.5).finished());
+-  expectedSolutions[2].insert(X(2), (Vector(1) << 0.75).finished());
++  expected[2].insert(X(1), (Vector(1) << 1.5).finished());
++  expected[2].insert(X(2), (Vector(1) << 0.75).finished());
+ 
+-  expectedSolutions[3].insert(X(1), (Vector(1) << 1.5).finished());
+-  expectedSolutions[3].insert(X(2), (Vector(1) << 0.5).finished());
++  expected[3].insert(X(1), (Vector(1) << 1.5).finished());
++  expected[3].insert(X(2), (Vector(1) << 0.5).finished());
+ 
+-  InequalityFactorGraph workingSet = solver.identifyActiveConstraints(
+-      qp.inequalities, currentSolution);
++  auto workingSet =
++      solver.identifyActiveConstraints(qp.inequalities, currentSolution);
+ 
+   QPSolver::State state(currentSolution, VectorValues(), workingSet, false,
+                         100);
+@@ -188,12 +188,12 @@ TEST(QPSolver, iterate) {
+     // Forst10book do not follow exactly what we implemented from Nocedal06book.
+     // Specifically, we do not re-identify active constraints and
+     // do not recompute dual variables after every step!!!
+-//    CHECK(assert_equal(expectedSolutions[it], state.values, 1e-10));
+-//    CHECK(assert_equal(expectedDuals[it], state.duals, 1e-10));
++    //    CHECK(assert_equal(expected[it], state.values, 1e-10));
++    //    CHECK(assert_equal(expectedDuals[it], state.duals, 1e-10));
+     it++;
+   }
+ 
+-  CHECK(assert_equal(expectedSolutions[3], state.values, 1e-10));
++  CHECK(assert_equal(expected[3], state.values, 1e-10));
+ }
+ 
+ /* ************************************************************************* */
+@@ -204,182 +204,161 @@ TEST(QPSolver, optimizeForst10book_pg171
+   VectorValues initialValues;
+   initialValues.insert(X(1), Z_1x1);
+   initialValues.insert(X(2), Z_1x1);
+-  VectorValues solution;
+-  boost::tie(solution, boost::tuples::ignore) = solver.optimize(initialValues);
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(X(1), (Vector(1) << 1.5).finished());
+-  expectedSolution.insert(X(2), (Vector(1) << 0.5).finished());
+-  CHECK(assert_equal(expectedSolution, solution, 1e-100));
++  VectorValues solution = solver.optimize(initialValues).first;
++  VectorValues expected;
++  expected.insert(X(1), (Vector(1) << 1.5).finished());
++  expected.insert(X(2), (Vector(1) << 0.5).finished());
++  CHECK(assert_equal(expected, solution, 1e-100));
+ }
+ 
+ pair<QP, QP> testParser(QPSParser parser) {
+   QP exampleqp = parser.Parse();
+-  QP expectedqp;
++  QP expected;
+   Key X1(Symbol('X', 1)), X2(Symbol('X', 2));
+   // min f(x,y) = 4 + 1.5x -y + 0.58x^2 + 2xy + 2yx + 10y^2
+-  expectedqp.cost.push_back(
+-      HessianFactor(X1, X2, 8.0 * I_1x1, 2.0 * I_1x1, -1.5 * kOne, 10.0 * I_1x1,
+-          2.0 * kOne, 8.0));
+-  // 2x + y >= 2
+-  // -x + 2y <= 6
+-  expectedqp.inequalities.push_back(
+-      LinearInequality(X1, -2.0 * I_1x1, X2, -I_1x1, -2, 0));
+-  expectedqp.inequalities.push_back(
+-      LinearInequality(X1, -I_1x1, X2, 2.0 * I_1x1, 6, 1));
+-  // x<= 20
+-  expectedqp.inequalities.push_back(LinearInequality(X1, I_1x1, 20, 4));
+-  //x >= 0
+-  expectedqp.inequalities.push_back(LinearInequality(X1, -I_1x1, 0, 2));
+-  // y > = 0
+-  expectedqp.inequalities.push_back(LinearInequality(X2, -I_1x1, 0, 3));
+-  return std::make_pair(expectedqp, exampleqp);
+-}
+-;
++  expected.cost.push_back(HessianFactor(X1, X2, 8.0 * I_1x1, 2.0 * I_1x1,
++                                        -1.5 * kOne, 10.0 * I_1x1, 2.0 * kOne,
++                                        8.0));
++
++  expected.inequalities.add(X1, -2.0 * I_1x1, X2, -I_1x1, -2, 0); // 2x + y >= 2
++  expected.inequalities.add(X1, -I_1x1, X2, 2.0 * I_1x1, 6, 1); // -x + 2y <= 6
++  expected.inequalities.add(X1, I_1x1, 20, 4);                  // x<= 20
++  expected.inequalities.add(X1, -I_1x1, 0, 2);                  // x >= 0
++  expected.inequalities.add(X2, -I_1x1, 0, 3);                  // y > = 0
++  return {expected, exampleqp};
++};
+ 
+ TEST(QPSolver, ParserSyntaticTest) {
+-  auto expectedActual = testParser(QPSParser("QPExample.QPS"));
+-  CHECK(assert_equal(expectedActual.first.cost, expectedActual.second.cost,
++  auto result = testParser(QPSParser("QPExample.QPS"));
++  CHECK(assert_equal(result.first.cost, result.second.cost, 1e-7));
++  CHECK(assert_equal(result.first.inequalities, result.second.inequalities,
+                      1e-7));
+-  CHECK(assert_equal(expectedActual.first.inequalities,
+-                     expectedActual.second.inequalities, 1e-7));
+-  CHECK(assert_equal(expectedActual.first.equalities,
+-                     expectedActual.second.equalities, 1e-7));
++  CHECK(assert_equal(result.first.equalities, result.second.equalities, 1e-7));
+ }
+ 
+ TEST(QPSolver, ParserSemanticTest) {
+-  auto expected_actual = testParser(QPSParser("QPExample.QPS"));
+-  VectorValues actualSolution, expectedSolution;
+-  boost::tie(expectedSolution, boost::tuples::ignore) =
+-      QPSolver(expected_actual.first).optimize();
+-  boost::tie(actualSolution, boost::tuples::ignore) =
+-      QPSolver(expected_actual.second).optimize();
+-  CHECK(assert_equal(actualSolution, expectedSolution, 1e-7));
++  auto result = testParser(QPSParser("QPExample.QPS"));
++  VectorValues expected = QPSolver(result.first).optimize().first;
++  VectorValues actual = QPSolver(result.second).optimize().first;
++  CHECK(assert_equal(actual, expected, 1e-7));
+ }
+ 
+-TEST(QPSolver, QPExampleTest){
++TEST(QPSolver, QPExampleTest) {
+   QP problem = QPSParser("QPExample.QPS").Parse();
+-  VectorValues actualSolution;
+   auto solver = QPSolver(problem);
+-  boost::tie(actualSolution, boost::tuples::ignore) = solver.optimize();
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(Symbol('X',1),0.7625*I_1x1);
+-  expectedSolution.insert(Symbol('X',2),0.4750*I_1x1);
+-  double error_expected = problem.cost.error(expectedSolution);
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(expectedSolution, actualSolution, 1e-7))
++  VectorValues actual = solver.optimize().first;
++  VectorValues expected;
++  expected.insert(Symbol('X', 1), 0.7625 * I_1x1);
++  expected.insert(Symbol('X', 2), 0.4750 * I_1x1);
++  double error_expected = problem.cost.error(expected);
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(expected, actual, 1e-7))
+   CHECK(assert_equal(error_expected, error_actual))
+ }
+ 
+ TEST(QPSolver, HS21) {
+   QP problem = QPSParser("HS21.QPS").Parse();
+-  VectorValues actualSolution;
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(Symbol('X',1), 2.0*I_1x1);
+-  expectedSolution.insert(Symbol('X',2), 0.0*I_1x1);
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
++  VectorValues expected;
++  expected.insert(Symbol('X', 1), 2.0 * I_1x1);
++  expected.insert(Symbol('X', 2), 0.0 * I_1x1);
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
+   CHECK(assert_equal(-99.9599999, error_actual, 1e-7))
+-  CHECK(assert_equal(expectedSolution, actualSolution))
++  CHECK(assert_equal(expected, actual))
+ }
+ 
+ TEST(QPSolver, HS35) {
+   QP problem = QPSParser("HS35.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(1.11111111e-01,error_actual, 1e-7))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(1.11111111e-01, error_actual, 1e-7))
+ }
+ 
+ TEST(QPSolver, HS35MOD) {
+   QP problem = QPSParser("HS35MOD.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(2.50000001e-01,error_actual, 1e-7))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(2.50000001e-01, error_actual, 1e-7))
+ }
+ 
+ TEST(QPSolver, HS51) {
+   QP problem = QPSParser("HS51.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(8.88178420e-16,error_actual, 1e-7))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(8.88178420e-16, error_actual, 1e-7))
+ }
+ 
+ TEST(QPSolver, HS52) {
+   QP problem = QPSParser("HS52.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(5.32664756,error_actual, 1e-7))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(5.32664756, error_actual, 1e-7))
+ }
+ 
+-TEST(QPSolver, HS268) { // This test needs an extra order of magnitude of tolerance than the rest
++TEST(QPSolver, HS268) { // This test needs an extra order of magnitude of
++                        // tolerance than the rest
+   QP problem = QPSParser("HS268.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(5.73107049e-07,error_actual, 1e-6))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(5.73107049e-07, error_actual, 1e-6))
+ }
+ 
+ TEST(QPSolver, QPTEST) { // REQUIRES Jacobian Fix
+   QP problem = QPSParser("QPTEST.QPS").Parse();
+-  VectorValues actualSolution;
+-  boost::tie(actualSolution, boost::tuples::ignore) = QPSolver(problem).optimize();
+-  double error_actual = problem.cost.error(actualSolution);
+-  CHECK(assert_equal(0.437187500e01,error_actual, 1e-7))
++  VectorValues actual = QPSolver(problem).optimize().first;
++  double error_actual = problem.cost.error(actual);
++  CHECK(assert_equal(0.437187500e01, error_actual, 1e-7))
+ }
+ 
+ /* ************************************************************************* */
+-// Create Matlab's test graph as in http://www.mathworks.com/help/optim/ug/quadprog.html
++// Create Matlab's test graph as in
++// http://www.mathworks.com/help/optim/ug/quadprog.html
+ QP createTestMatlabQPEx() {
+   QP qp;
+ 
+   // Objective functions 0.5*x1^2 + x2^2 - x1*x2 - 2*x1 -6*x2
+   // Note the Hessian encodes:
+-  //        0.5*x1'*G11*x1 + x1'*G12*x2 + 0.5*x2'*G22*x2 - x1'*g1 - x2'*g2 + 0.5*f
++  //        0.5*x1'*G11*x1 + x1'*G12*x2 + 0.5*x2'*G22*x2 - x1'*g1 - x2'*g2 +
++  //        0.5*f
+   // Hence, we have G11=1, G12 = -1, g1 = +2, G22 = 2, g2 = +6, f = 0
+-  qp.cost.push_back(
+-      HessianFactor(X(1), X(2), 1.0 * I_1x1, -I_1x1, 2.0 * I_1x1, 2.0 * I_1x1,
+-          6 * I_1x1, 1000.0));
++  qp.cost.push_back(HessianFactor(X(1), X(2), 1.0 * I_1x1, -I_1x1, 2.0 * I_1x1,
++                                  2.0 * I_1x1, 6 * I_1x1, 1000.0));
+ 
+   // Inequality constraints
+-  qp.inequalities.push_back(LinearInequality(X(1), I_1x1, X(2), I_1x1, 2, 0)); // x1 + x2 <= 2
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), -I_1x1, X(2), 2 * I_1x1, 2, 1)); //-x1 + 2*x2 <=2
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), 2 * I_1x1, X(2), I_1x1, 3, 2)); // 2*x1 + x2 <=3
+-  qp.inequalities.push_back(LinearInequality(X(1), -I_1x1, 0, 3)); // -x1      <= 0
+-  qp.inequalities.push_back(LinearInequality(X(2), -I_1x1, 0, 4)); //      -x2 <= 0
++  qp.inequalities.add(X(1), I_1x1, X(2), I_1x1, 2, 0);      // x1 + x2 <= 2
++  qp.inequalities.add(X(1), -I_1x1, X(2), 2 * I_1x1, 2, 1); //-x1 + 2*x2 <=2
++  qp.inequalities.add(X(1), 2 * I_1x1, X(2), I_1x1, 3, 2);  // 2*x1 + x2 <=3
++  qp.inequalities.add(X(1), -I_1x1, 0, 3);                  // -x1      <= 0
++  qp.inequalities.add(X(2), -I_1x1, 0, 4);                  //      -x2 <= 0
+ 
+   return qp;
+ }
+ 
+-///* ************************************************************************* */
++///* *************************************************************************
++///*/
+ TEST(QPSolver, optimizeMatlabEx) {
+   QP qp = createTestMatlabQPEx();
+   QPSolver solver(qp);
+   VectorValues initialValues;
+   initialValues.insert(X(1), Z_1x1);
+   initialValues.insert(X(2), Z_1x1);
+-  VectorValues solution;
+-  boost::tie(solution, boost::tuples::ignore) = solver.optimize(initialValues);
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(X(1), (Vector(1) << 2.0 / 3.0).finished());
+-  expectedSolution.insert(X(2), (Vector(1) << 4.0 / 3.0).finished());
+-  CHECK(assert_equal(expectedSolution, solution, 1e-7));
++  VectorValues solution = solver.optimize(initialValues).first;
++  VectorValues expected;
++  expected.insert(X(1), (Vector(1) << 2.0 / 3.0).finished());
++  expected.insert(X(2), (Vector(1) << 4.0 / 3.0).finished());
++  CHECK(assert_equal(expected, solution, 1e-7));
+ }
+ 
+-///* ************************************************************************* */
++///* *************************************************************************
++///*/
+ TEST(QPSolver, optimizeMatlabExNoinitials) {
+   QP qp = createTestMatlabQPEx();
+   QPSolver solver(qp);
+-  VectorValues solution;
+-  boost::tie(solution, boost::tuples::ignore) = solver.optimize();
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(X(1), (Vector(1) << 2.0 / 3.0).finished());
+-  expectedSolution.insert(X(2), (Vector(1) << 4.0 / 3.0).finished());
+-  CHECK(assert_equal(expectedSolution, solution, 1e-7));
++  VectorValues solution = solver.optimize().first;
++  VectorValues expected;
++  expected.insert(X(1), (Vector(1) << 2.0 / 3.0).finished());
++  expected.insert(X(2), (Vector(1) << 4.0 / 3.0).finished());
++  CHECK(assert_equal(expected, solution, 1e-7));
+ }
+ 
+ /* ************************************************************************* */
+@@ -387,18 +366,15 @@ TEST(QPSolver, optimizeMatlabExNoinitial
+ QP createTestNocedal06bookEx16_4() {
+   QP qp;
+ 
+-  qp.cost.push_back(JacobianFactor(X(1), I_1x1, I_1x1));
+-  qp.cost.push_back(JacobianFactor(X(2), I_1x1, 2.5 * I_1x1));
++  qp.cost.add(X(1), I_1x1, I_1x1);
++  qp.cost.add(X(2), I_1x1, 2.5 * I_1x1);
+ 
+   // Inequality constraints
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), -I_1x1, X(2), 2 * I_1x1, 2, 0));
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), I_1x1, X(2), 2 * I_1x1, 6, 1));
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), I_1x1, X(2), -2 * I_1x1, 2, 2));
+-  qp.inequalities.push_back(LinearInequality(X(1), -I_1x1, 0.0, 3));
+-  qp.inequalities.push_back(LinearInequality(X(2), -I_1x1, 0.0, 4));
++  qp.inequalities.add(X(1), -I_1x1, X(2), 2 * I_1x1, 2, 0);
++  qp.inequalities.add(X(1), I_1x1, X(2), 2 * I_1x1, 6, 1);
++  qp.inequalities.add(X(1), I_1x1, X(2), -2 * I_1x1, 2, 2);
++  qp.inequalities.add(X(1), -I_1x1, 0.0, 3);
++  qp.inequalities.add(X(2), -I_1x1, 0.0, 4);
+ 
+   return qp;
+ }
+@@ -410,21 +386,19 @@ TEST(QPSolver, optimizeNocedal06bookEx16
+   initialValues.insert(X(1), (Vector(1) << 2.0).finished());
+   initialValues.insert(X(2), Z_1x1);
+ 
+-  VectorValues solution;
+-  boost::tie(solution, boost::tuples::ignore) = solver.optimize(initialValues);
+-  VectorValues expectedSolution;
+-  expectedSolution.insert(X(1), (Vector(1) << 1.4).finished());
+-  expectedSolution.insert(X(2), (Vector(1) << 1.7).finished());
+-  CHECK(assert_equal(expectedSolution, solution, 1e-7));
++  VectorValues solution = solver.optimize(initialValues).first;
++  VectorValues expected;
++  expected.insert(X(1), (Vector(1) << 1.4).finished());
++  expected.insert(X(2), (Vector(1) << 1.7).finished());
++  CHECK(assert_equal(expected, solution, 1e-7));
+ }
+ 
+ /* ************************************************************************* */
+ TEST(QPSolver, failedSubproblem) {
+   QP qp;
+-  qp.cost.push_back(JacobianFactor(X(1), I_2x2, Z_2x1));
++  qp.cost.add(X(1), I_2x2, Z_2x1);
+   qp.cost.push_back(HessianFactor(X(1), Z_2x2, Z_2x1, 100.0));
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), (Matrix(1, 2) << -1.0, 0.0).finished(), -1.0, 0));
++  qp.inequalities.add(X(1), (Matrix(1, 2) << -1.0, 0.0).finished(), -1.0, 0);
+ 
+   VectorValues expected;
+   expected.insert(X(1), (Vector(2) << 1.0, 0.0).finished());
+@@ -433,8 +407,7 @@ TEST(QPSolver, failedSubproblem) {
+   initialValues.insert(X(1), (Vector(2) << 10.0, 100.0).finished());
+ 
+   QPSolver solver(qp);
+-  VectorValues solution;
+-  boost::tie(solution, boost::tuples::ignore) = solver.optimize(initialValues);
++  VectorValues solution = solver.optimize(initialValues).first;
+ 
+   CHECK(assert_equal(expected, solution, 1e-7));
+ }
+@@ -442,10 +415,9 @@ TEST(QPSolver, failedSubproblem) {
+ /* ************************************************************************* */
+ TEST(QPSolver, infeasibleInitial) {
+   QP qp;
+-  qp.cost.push_back(JacobianFactor(X(1), I_2x2, Vector::Zero(2)));
++  qp.cost.add(X(1), I_2x2, Vector::Zero(2));
+   qp.cost.push_back(HessianFactor(X(1), Z_2x2, Vector::Zero(2), 100.0));
+-  qp.inequalities.push_back(
+-      LinearInequality(X(1), (Matrix(1, 2) << -1.0, 0.0).finished(), -1.0, 0));
++  qp.inequalities.add(X(1), (Matrix(1, 2) << -1.0, 0.0).finished(), -1.0, 0);
+ 
+   VectorValues expected;
+   expected.insert(X(1), (Vector(2) << 1.0, 0.0).finished());
+@@ -464,4 +436,3 @@ int main() {
+   return TestRegistry::runAllTests(tr);
+ }
+ /* ************************************************************************* */
+-
+--- gtsam-4.1.0.orig/matlab/CMakeLists.txt
++++ gtsam-4.1.0/matlab/CMakeLists.txt
+@@ -2,6 +2,10 @@
+ 
+ include(GtsamMatlabWrap)
+ 
++# Record the root dir for gtsam - needed during external builds, e.g., ROS
++set(GTSAM_SOURCE_ROOT_DIR ${GTSAM_SOURCE_DIR})
++message(STATUS "GTSAM_SOURCE_ROOT_DIR: [${GTSAM_SOURCE_ROOT_DIR}]")
++
+ # Tests
+ #message(STATUS "Installing Matlab Toolbox")
+ install_matlab_scripts("${GTSAM_SOURCE_ROOT_DIR}/matlab/" "*.m;*.fig")
+@@ -21,7 +25,7 @@ install_matlab_scripts("${GTSAM_SOURCE_R
+ file(GLOB matlab_examples_data_graph "${GTSAM_SOURCE_ROOT_DIR}/examples/Data/*.graph")
+ file(GLOB matlab_examples_data_mat "${GTSAM_SOURCE_ROOT_DIR}/examples/Data/*.mat")
+ file(GLOB matlab_examples_data_txt "${GTSAM_SOURCE_ROOT_DIR}/examples/Data/*.txt")
+-set(matlab_examples_data ${matlab_examples_data_graph} ${matlab_examples_data_mat} ${matlab_examples_data_txt}) 
++set(matlab_examples_data ${matlab_examples_data_graph} ${matlab_examples_data_mat} ${matlab_examples_data_txt})
+ if(GTSAM_BUILD_TYPE_POSTFIXES)
+ 	foreach(build_type ${CMAKE_CONFIGURATION_TYPES})
+ 		string(TOUPPER "${build_type}" build_type_upper)
+@@ -38,4 +42,3 @@ if(GTSAM_BUILD_TYPE_POSTFIXES)
+ else()
+ 	install(FILES ${matlab_examples_data} DESTINATION ${GTSAM_TOOLBOX_INSTALL_PATH}/gtsam_examples/Data)
+ endif()
+-
 --- gtsam-4.1.0.orig/matlab/README.md
 +++ gtsam-4.1.0/matlab/README.md
 @@ -4,16 +4,16 @@ http://borg.cc.gatech.edu/projects/gtsam
@@ -4777,7 +7210,7 @@ Last-Update: 2020-10-02
  # Generate setup.py.
  file(READ "${PROJECT_SOURCE_DIR}/README.md" README_CONTENTS)
  configure_file(${PROJECT_SOURCE_DIR}/python/setup.py.in
-@@ -26,11 +30,14 @@ set(ignore
+@@ -26,11 +30,15 @@ set(ignore
      gtsam::ISAM2ThresholdMapValue
      gtsam::FactorIndices
      gtsam::FactorIndexSet
@@ -4789,17 +7222,20 @@ Last-Update: 2020-10-02
      gtsam::Pose3Vector
 -    gtsam::KeyVector)
 +    gtsam::KeyVector
-+    gtsam::BinaryMeasurementsUnit3)
++    gtsam::BinaryMeasurementsUnit3
++    gtsam::KeyPairDoubleMap)
  
  pybind_wrap(gtsam_py # target
              ${PROJECT_SOURCE_DIR}/gtsam/gtsam.i # interface_header
-@@ -72,7 +79,8 @@ set(ignore
+@@ -72,7 +80,10 @@ set(ignore
          gtsam::Point2Vector
          gtsam::Pose3Vector
          gtsam::KeyVector
 -        gtsam::FixedLagSmootherKeyTimestampMapValue)
 +        gtsam::FixedLagSmootherKeyTimestampMapValue
-+        gtsam::BinaryMeasurementsUnit3)
++        gtsam::BinaryMeasurementsUnit3
++        gtsam::KeyPairDoubleMap)
++        
  pybind_wrap(gtsam_unstable_py # target
          ${PROJECT_SOURCE_DIR}/gtsam_unstable/gtsam_unstable.i # interface_header
          "gtsam_unstable.cpp" # generated_cpp
@@ -4977,6 +7413,153 @@ Last-Update: 2020-10-02
 \ No newline at end of file
 +- PreintegrationExample
 +- SFMData
+--- /dev/null
++++ gtsam-4.1.0/python/gtsam/examples/TranslationAveragingExample.py
+@@ -0,0 +1,144 @@
++"""
++GTSAM Copyright 2010-2018, Georgia Tech Research Corporation,
++Atlanta, Georgia 30332-0415
++All Rights Reserved
++Authors: Frank Dellaert, et al. (see THANKS for the full author list)
++
++See LICENSE for the license information
++
++This example shows how 1dsfm uses outlier rejection (MFAS) and optimization (translation recovery)
++together for estimating global translations from relative translation directions and global rotations.
++The purpose of this example is to illustrate the connection between these two classes using a small SfM dataset.
++
++Author: Akshay Krishnan
++Date: September 2020
++"""
++
++from collections import defaultdict
++from typing import List, Tuple
++
++import numpy as np
++
++import gtsam
++from gtsam.examples import SFMdata
++
++# Hyperparameters for 1dsfm, values used from Kyle Wilson's code.
++MAX_1DSFM_PROJECTION_DIRECTIONS = 48
++OUTLIER_WEIGHT_THRESHOLD = 0.1
++
++
++def get_data() -> Tuple[gtsam.Values, List[gtsam.BinaryMeasurementUnit3]]:
++    """"Returns global rotations and unit translation directions between 8 cameras
++    that lie on a circle and face the center. The poses of 8 cameras are obtained from SFMdata
++    and the unit translations directions between some camera pairs are computed from their
++    global translations. """
++    fx, fy, s, u0, v0 = 50.0, 50.0, 0.0, 50.0, 50.0
++    wTc_list = SFMdata.createPoses(gtsam.Cal3_S2(fx, fy, s, u0, v0))
++    # Rotations of the cameras in the world frame.
++    wRc_values = gtsam.Values()
++    # Normalized translation directions from camera i to camera j
++    # in the coordinate frame of camera i.
++    i_iZj_list = []
++    for i in range(0, len(wTc_list) - 2):
++        # Add the rotation.
++        wRi = wTc_list[i].rotation()
++        wRc_values.insert(i, wRi)
++        # Create unit translation measurements with next two poses.
++        for j in range(i + 1, i + 3):
++            # Compute the translation from pose i to pose j, in the world reference frame.
++            w_itj = wTc_list[j].translation() - wTc_list[i].translation()
++            # Obtain the translation in the camera i's reference frame.
++            i_itj = wRi.unrotate(w_itj)
++            # Compute the normalized unit translation direction.
++            i_iZj = gtsam.Unit3(i_itj)
++            i_iZj_list.append(gtsam.BinaryMeasurementUnit3(
++                i, j, i_iZj, gtsam.noiseModel.Isotropic.Sigma(3, 0.01)))
++    # Add the last two rotations.
++    wRc_values.insert(len(wTc_list) - 1, wTc_list[-1].rotation())
++    wRc_values.insert(len(wTc_list) - 2, wTc_list[-2].rotation())
++    return wRc_values, i_iZj_list
++
++
++def filter_outliers(w_iZj_list: gtsam.BinaryMeasurementsUnit3) -> gtsam.BinaryMeasurementsUnit3:
++    """Removes outliers from a list of Unit3 measurements that are the 
++    translation directions from camera i to camera j in the world frame."""
++
++    # Indices of measurements that are to be used as projection directions.
++    # These are randomly chosen. All sampled directions must be unique.
++    num_directions_to_sample = min(
++        MAX_1DSFM_PROJECTION_DIRECTIONS, len(w_iZj_list))
++    sampled_indices = np.random.choice(
++        len(w_iZj_list), num_directions_to_sample, replace=False)
++
++    # Sample projection directions from the measurements.
++    projection_directions = [w_iZj_list[idx].measured()
++                             for idx in sampled_indices]
++
++    outlier_weights = []
++    # Find the outlier weights for each direction using MFAS.
++    for direction in projection_directions:
++        algorithm = gtsam.MFAS(w_iZj_list, direction)
++        outlier_weights.append(algorithm.computeOutlierWeights())
++
++    # Compute average of outlier weights. Each outlier weight is a map from a pair of Keys
++    # (camera IDs) to a weight, where weights are proportional to the probability of the edge
++    # being an outlier.
++    avg_outlier_weights = defaultdict(float)
++    for outlier_weight_dict in outlier_weights:
++        for keypair, weight in outlier_weight_dict.items():
++            avg_outlier_weights[keypair] += weight / len(outlier_weights)
++
++    # Remove w_iZj that have weight greater than threshold, these are outliers.
++    w_iZj_inliers = gtsam.BinaryMeasurementsUnit3()
++    [w_iZj_inliers.append(w_iZj) for w_iZj in w_iZj_list if avg_outlier_weights[(
++        w_iZj.key1(), w_iZj.key2())] < OUTLIER_WEIGHT_THRESHOLD]
++
++    return w_iZj_inliers
++
++
++def estimate_poses(i_iZj_list: gtsam.BinaryMeasurementsUnit3,
++                   wRc_values: gtsam.Values) -> gtsam.Values:
++    """Estimate poses given rotations and normalized translation directions between cameras.
++
++    Args:
++        i_iZj_list: List of normalized translation direction measurements between camera pairs, 
++                    Z here refers to measurements. The measurements are of camera j with reference 
++                    to camera i (iZj), in camera i's coordinate frame (i_). iZj represents a unit 
++                    vector to j in i's frame and is not a transformation. 
++        wRc_values: Rotations of the cameras in the world frame.
++
++    Returns:
++        gtsam.Values: Estimated poses.
++    """
++
++    # Convert the translation direction measurements to world frame using the rotations.
++    w_iZj_list = gtsam.BinaryMeasurementsUnit3()
++    for i_iZj in i_iZj_list:
++        w_iZj = gtsam.Unit3(wRc_values.atRot3(i_iZj.key1())
++                                      .rotate(i_iZj.measured().point3()))
++        w_iZj_list.append(gtsam.BinaryMeasurementUnit3(
++            i_iZj.key1(), i_iZj.key2(), w_iZj, i_iZj.noiseModel()))
++
++    # Remove the outliers in the unit translation directions.
++    w_iZj_inliers = filter_outliers(w_iZj_list)
++
++    # Run the optimizer to obtain translations for normalized directions.
++    wtc_values = gtsam.TranslationRecovery(w_iZj_inliers).run()
++
++    wTc_values = gtsam.Values()
++    for key in wRc_values.keys():
++        wTc_values.insert(key, gtsam.Pose3(
++            wRc_values.atRot3(key), wtc_values.atPoint3(key)))
++    return wTc_values
++
++
++def main():
++    wRc_values, i_iZj_list = get_data()
++    wTc_values = estimate_poses(i_iZj_list, wRc_values)
++    print("**** Translation averaging output ****")
++    print(wTc_values)
++    print("**************************************")
++
++
++if __name__ == '__main__':
++    main()
 --- gtsam-4.1.0.orig/python/gtsam/preamble.h
 +++ gtsam-4.1.0/python/gtsam/preamble.h
 @@ -9,3 +9,4 @@ PYBIND11_MAKE_OPAQUE(std::vector<gtsam::
@@ -4986,13 +7569,42 @@ Last-Update: 2020-10-02
 +PYBIND11_MAKE_OPAQUE(std::vector<gtsam::IndexPair>);
 --- gtsam-4.1.0.orig/python/gtsam/specializations.h
 +++ gtsam-4.1.0/python/gtsam/specializations.h
-@@ -9,3 +9,6 @@ py::bind_vector<std::vector<gtsam::Point
+@@ -9,3 +9,7 @@ py::bind_vector<std::vector<gtsam::Point
  py::bind_vector<std::vector<gtsam::Pose3> >(m_, "Pose3Vector");
  py::bind_vector<std::vector<boost::shared_ptr<gtsam::BetweenFactor<gtsam::Pose3> > > >(m_, "BetweenFactorPose3s");
  py::bind_vector<std::vector<boost::shared_ptr<gtsam::BetweenFactor<gtsam::Pose2> > > >(m_, "BetweenFactorPose2s");
 +py::bind_vector<std::vector<gtsam::BinaryMeasurement<gtsam::Unit3> > >(m_, "BinaryMeasurementsUnit3");
 +py::bind_map<gtsam::IndexPairSetMap>(m_, "IndexPairSetMap");
 +py::bind_vector<gtsam::IndexPairVector>(m_, "IndexPairVector");
++py::bind_map<gtsam::KeyPairDoubleMap>(m_, "KeyPairDoubleMap");
+--- gtsam-4.1.0.orig/python/gtsam/tests/test_JacobianFactor.py
++++ gtsam-4.1.0/python/gtsam/tests/test_JacobianFactor.py
+@@ -19,7 +19,7 @@ from gtsam.utils.test_case import GtsamT
+ class TestJacobianFactor(GtsamTestCase):
+ 
+     def test_eliminate(self):
+-        # Recommended way to specify a matrix (see cython/README)
++        # Recommended way to specify a matrix (see python/README)
+         Ax2 = np.array(
+            [[-5., 0.],
+             [+0., -5.],
+--- gtsam-4.1.0.orig/python/gtsam/tests/test_Pose3.py
++++ gtsam-4.1.0/python/gtsam/tests/test_Pose3.py
+@@ -65,6 +65,14 @@ class TestPose3(GtsamTestCase):
+         actual = Pose3.adjoint_(xi, xi)
+         np.testing.assert_array_equal(actual, expected)
+ 
++    def test_serialization(self):
++        """Test if serialization is working normally"""
++        expected = Pose3(Rot3.Ypr(0.0, 1.0, 0.0), Point3(1, 1, 0))
++        actual = Pose3()
++        serialized = expected.serialize()
++        actual.deserialize(serialized)
++        self.gtsamAssertEquals(expected, actual, 1e-10)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
 --- /dev/null
 +++ gtsam-4.1.0/python/gtsam/tests/test_TranslationRecovery.py
 @@ -0,0 +1,63 @@
@@ -16853,3 +19465,58 @@ Last-Update: 2020-10-02
 +    },
 +    cmdclass=cmdclass
 +)
+--- gtsam-4.1.0.orig/wrap/pybind_wrapper.py
++++ gtsam-4.1.0/wrap/pybind_wrapper.py
+@@ -69,13 +69,13 @@ class PybindWrapper(object):
+             return textwrap.dedent('''
+                     .def("serialize",
+                         []({class_inst} self){{
+-                            return gtsam::serialize(self);
++                            return gtsam::serialize(*self);
+                         }}
+                     )
+                     .def("deserialize",
+                         []({class_inst} self, string serialized){{
+-                            return gtsam::deserialize(serialized, self);
+-                        }})
++                            gtsam::deserialize(serialized, *self);
++                        }}, py::arg("serialized"))
+                     '''.format(class_inst=cpp_class + '*'))
+ 
+         is_method = isinstance(method, instantiator.InstantiatedMethod)
+--- gtsam-4.1.0.orig/wrap/tests/expected-python/geometry_pybind.cpp
++++ gtsam-4.1.0/wrap/tests/expected-python/geometry_pybind.cpp
+@@ -40,13 +40,13 @@ PYBIND11_MODULE(geometry_py, m_) {
+         .def("vectorConfusion",[](gtsam::Point2* self){return self->vectorConfusion();})
+ .def("serialize",
+     [](gtsam::Point2* self){
+-        return gtsam::serialize(self);
++        return gtsam::serialize(*self);
+     }
+ )
+ .def("deserialize",
+     [](gtsam::Point2* self, string serialized){
+-        return gtsam::deserialize(serialized, self);
+-    })
++        gtsam::deserialize(serialized, *self);
++    }, py::arg("serialized"))
+ ;
+ 
+     py::class_<gtsam::Point3, std::shared_ptr<gtsam::Point3>>(m_gtsam, "Point3")
+@@ -54,13 +54,13 @@ PYBIND11_MODULE(geometry_py, m_) {
+         .def("norm",[](gtsam::Point3* self){return self->norm();})
+ .def("serialize",
+     [](gtsam::Point3* self){
+-        return gtsam::serialize(self);
++        return gtsam::serialize(*self);
+     }
+ )
+ .def("deserialize",
+     [](gtsam::Point3* self, string serialized){
+-        return gtsam::deserialize(serialized, self);
+-    })
++        gtsam::deserialize(serialized, *self);
++    }, py::arg("serialized"))
+ 
+         .def_static("staticFunction",[](){return gtsam::Point3::staticFunction();})
+         .def_static("StaticFunctionRet",[]( double z){return gtsam::Point3::StaticFunctionRet(z);}, py::arg("z"));
