@@ -122,7 +122,12 @@ field below the secret.
 		git fetch --all
         git push origin 'refs/remotes/borglab/*:refs/heads/*'
 
-The last line will copy all branches of this repo over to yours, giving you a working setup.
+   The last line will copy all branches of this repo over to yours,
+   giving you a working setup.
+
+5. One more thing: push the adjusted workflow files:
+
+        git push origin master
 
 That's it! Now check your repo on github (under "Actions") to see that everything builds and uploads correctly.
 
