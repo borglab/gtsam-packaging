@@ -5,76 +5,25 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~25.gbp0f61de) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~29.gbpf3239a) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @0f61de0b61ce7a89bee8225bb312c7cab69b4985 **
+   ** SNAPSHOT build @f3239a4673e0fb6a95efd35532a8314fb8f07a29 **
  .
-   [ Bernd Pfrommer ]
-   ** SNAPSHOT build @8736ade7a0c6fa64f4d48fb1f6758ac5c9c0d313 **
+   [ Borglab Builder ]
+   ** SNAPSHOT build @6c0fba2029be2bb5802335fbff58584de7ca7c32 **
  .
    * modified changelog for distro focal
  .
-   [ akrishnan86 ]
-   * wrap MFAS
+   [ Fan Jiang ]
+   * Fix LLVM repo keys
  .
-   [ Akshay Krishnan ]
-   * changing to boost shared_ptr
-   * remove unusede ptr member in MFAS
-   * translation averaging example
- .
-   [ akrishnan86 ]
-   * adding documentation for example
-   * naming and other changes - review1
-   * updating defaultdict init
- .
-   [ Frank Dellaert ]
-   * Small formatting changes and removal of test header
-   * New method "add" as in GaussianFactorGraph
-   * Re-formatting and using "add"/"auto" where we can.
-   * Fixed spelling mistake
- .
-   [ akrishnan86 ]
-   * renaming variables
- .
-   [ Varun Agrawal ]
-   * remove all Cython references
- .
-   [ Bernd Pfrommer ]
+   [ Borglab Builder ]
    * commit of final snapshot version number update
  .
-   [ akrishnan86 ]
-   * outlier rejection in separate fn and other readability changes
-   * readability changes
-   * fixing one variable that was not renamed
- .
-   [ Varun Agrawal ]
-   * find python if using Default
- .
-   [ Frank Dellaert ]
-   * Fixed include error
- .
-   [ akrishnan86 ]
-   * removing shared ptr, iostream, renaming
- .
-   [ Varun Agrawal ]
-   * added normalize function to orthogonalize the rotation after composition
-   * normalized needs to be called explicitly
-   * Moved normalize next to ClosestTo and add more docs
- .
-   [ Jose Luis Blanco Claraco ]
-   * refactor cmake scripts into smaller files
-   * Remove obsolete comments
-   * Use system eigen3 only if first quietly found.
- .
    [ Fan Jiang ]
-   * Squashed 'wrap/' changes from 5e1373486..2192b194e
-   * Resurrect serialization tests
-   * Add unit test for python serdes
-   * Squashed 'wrap/' changes from 2192b194e..dfa624e77
- .
-   [ Jose Luis Blanco Claraco ]
-   * Use camel case for cmake files
-   * Revert use system Eigen if found
+   * Add comments
+   * Add comments
+   * Add comments
 Author: Borglab Builder <borglab.launchpad@gmail.com>
 
 ---
@@ -88,7 +37,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2020-10-11
+Last-Update: 2020-10-15
 
 --- gtsam-4.1.0.orig/.github/scripts/python.sh
 +++ gtsam-4.1.0/.github/scripts/python.sh
@@ -181,6 +130,23 @@ Last-Update: 2020-10-11
 +$PYTHON setup.py install --user --prefix=
 +cd $GITHUB_WORKSPACE/python/gtsam/tests
 +$PYTHON -m unittest discover
+--- gtsam-4.1.0.orig/.github/workflows/build-linux.yml
++++ gtsam-4.1.0/.github/workflows/build-linux.yml
+@@ -48,8 +48,13 @@ jobs:
+       - name: Install (Linux)
+         if: runner.os == 'Linux'
+         run: |
+-          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
++          # LLVM (clang) 9 is not in Bionic's repositories so we add the official LLVM repository.
+           if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
++            # pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # 15CF4D18AF4F7421 is the GPG key for the LLVM apt repository
++            # This key is not in the keystore by default for Ubuntu so we need to add it.
++            gpg --keyserver pool.sks-keyservers.net --recv-key 15CF4D18AF4F7421
++            gpg -a --export 15CF4D18AF4F7421 | sudo apt-key add -
+             sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+           fi
+           sudo apt-get -y update
 --- gtsam-4.1.0.orig/.github/workflows/build-python.yml
 +++ gtsam-4.1.0/.github/workflows/build-python.yml
 @@ -12,7 +12,6 @@ jobs:
@@ -199,6 +165,32 @@ Last-Update: 2020-10-11
          include:
            - name: ubuntu-18.04-gcc-5
              os: ubuntu-18.04
+@@ -63,8 +61,13 @@ jobs:
+       - name: Install (Linux)
+         if: runner.os == 'Linux'
+         run: |
+-          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
++          # LLVM (clang) 9 is not in Bionic's repositories so we add the official LLVM repository.
+           if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
++            # pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # 15CF4D18AF4F7421 is the GPG key for the LLVM apt repository
++            # This key is not in the keystore by default for Ubuntu so we need to add it.
++            gpg --keyserver pool.sks-keyservers.net --recv-key 15CF4D18AF4F7421
++            gpg -a --export 15CF4D18AF4F7421 | sudo apt-key add -
+             sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+           fi
+           sudo apt-get -y update
+--- gtsam-4.1.0.orig/.github/workflows/build-special.yml
++++ gtsam-4.1.0/.github/workflows/build-special.yml
+@@ -56,6 +56,8 @@ jobs:
+         run: |
+           # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
+           if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
++            gpg --keyserver pool.sks-keyservers.net --recv-key 15CF4D18AF4F7421
++            gpg -a --export 15CF4D18AF4F7421 | sudo apt-key add -
+             sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
+           fi
+           sudo apt-get -y update
 --- gtsam-4.1.0.orig/.github/workflows/trigger-python.yml
 +++ gtsam-4.1.0/.github/workflows/trigger-python.yml
 @@ -1,11 +1,11 @@

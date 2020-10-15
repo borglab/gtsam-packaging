@@ -1,10 +1,24 @@
-gtsam (4.1.0-1ubuntu1~28.gbp6c0fba) UNRELEASED; urgency=medium
+gtsam (4.1.0-1ubuntu1~29.gbpf3239a) UNRELEASED; urgency=medium
 
+  ** SNAPSHOT build @f3239a4673e0fb6a95efd35532a8314fb8f07a29 **
+
+  [ Borglab Builder ]
   ** SNAPSHOT build @6c0fba2029be2bb5802335fbff58584de7ca7c32 **
 
   * modified changelog for distro focal
 
- -- Borglab Builder <borglab.launchpad@gmail.com>  Sun, 11 Oct 2020 21:29:36 +0000
+  [ Fan Jiang ]
+  * Fix LLVM repo keys
+
+  [ Borglab Builder ]
+  * commit of final snapshot version number update
+
+  [ Fan Jiang ]
+  * Add comments
+  * Add comments
+  * Add comments
+
+ -- Borglab Builder <borglab.launchpad@gmail.com>  Thu, 15 Oct 2020 02:59:28 +0000
 
 gtsam (4.1.0-1ubuntu1~27.gbpd73779) focal; urgency=medium
 
