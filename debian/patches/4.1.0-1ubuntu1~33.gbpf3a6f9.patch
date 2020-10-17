@@ -5,25 +5,23 @@ Description: <short summary of the patch>
  information below has been extracted from the changelog. Adjust it or drop
  it.
  .
- gtsam (4.1.0-1ubuntu1~29.gbpf3239a) UNRELEASED; urgency=medium
+ gtsam (4.1.0-1ubuntu1~33.gbpf3a6f9) UNRELEASED; urgency=medium
  .
-   ** SNAPSHOT build @f3239a4673e0fb6a95efd35532a8314fb8f07a29 **
+   ** SNAPSHOT build @f3a6f93f357b8d9004135f0f5c70e33451269aae **
  .
    [ Borglab Builder ]
-   ** SNAPSHOT build @6c0fba2029be2bb5802335fbff58584de7ca7c32 **
+   ** SNAPSHOT build @8206c580fe51fde02f30c0436382217194cf5651 **
  .
    * modified changelog for distro focal
  .
    [ Fan Jiang ]
-   * Fix LLVM repo keys
+   * Fix inteminent sks keyserver failure
  .
    [ Borglab Builder ]
    * commit of final snapshot version number update
  .
    [ Fan Jiang ]
-   * Add comments
-   * Add comments
-   * Add comments
+   * Add notes
 Author: Borglab Builder <borglab.launchpad@gmail.com>
 
 ---
@@ -37,7 +35,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2020-10-15
+Last-Update: 2020-10-17
 
 --- gtsam-4.1.0.orig/.github/scripts/python.sh
 +++ gtsam-4.1.0/.github/scripts/python.sh
@@ -132,18 +130,20 @@ Last-Update: 2020-10-15
 +$PYTHON -m unittest discover
 --- gtsam-4.1.0.orig/.github/workflows/build-linux.yml
 +++ gtsam-4.1.0/.github/workflows/build-linux.yml
-@@ -48,8 +48,13 @@ jobs:
+@@ -48,8 +48,15 @@ jobs:
        - name: Install (Linux)
          if: runner.os == 'Linux'
          run: |
 -          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
 +          # LLVM (clang) 9 is not in Bionic's repositories so we add the official LLVM repository.
            if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
-+            # pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # (ipv4|ha).pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # ipv4 avoids potential timeouts because of crappy IPv6 infrastructure
 +            # 15CF4D18AF4F7421 is the GPG key for the LLVM apt repository
 +            # This key is not in the keystore by default for Ubuntu so we need to add it.
-+            gpg --keyserver pool.sks-keyservers.net --recv-key 15CF4D18AF4F7421
-+            gpg -a --export 15CF4D18AF4F7421 | sudo apt-key add -
++            LLVM_KEY=15CF4D18AF4F7421
++            gpg --keyserver ipv4.pool.sks-keyservers.net --recv-key $LLVM_KEY || gpg --keyserver ha.pool.sks-keyservers.net --recv-key $LLVM_KEY
++            gpg -a --export $LLVM_KEY | sudo apt-key add -
              sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
            fi
            sudo apt-get -y update
@@ -165,18 +165,19 @@ Last-Update: 2020-10-15
          include:
            - name: ubuntu-18.04-gcc-5
              os: ubuntu-18.04
-@@ -63,8 +61,13 @@ jobs:
+@@ -63,8 +61,14 @@ jobs:
        - name: Install (Linux)
          if: runner.os == 'Linux'
          run: |
 -          # LLVM 9 is not in Bionic's repositories so we add the official LLVM repository.
-+          # LLVM (clang) 9 is not in Bionic's repositories so we add the official LLVM repository.
            if [ "${{ matrix.compiler }}" = "clang" ] && [ "${{ matrix.version }}" = "9" ]; then
-+            # pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # (ipv4|ha).pool.sks-keyservers.net is the SKS GPG global keyserver pool
++            # ipv4 avoids potential timeouts because of crappy IPv6 infrastructure
 +            # 15CF4D18AF4F7421 is the GPG key for the LLVM apt repository
 +            # This key is not in the keystore by default for Ubuntu so we need to add it.
-+            gpg --keyserver pool.sks-keyservers.net --recv-key 15CF4D18AF4F7421
-+            gpg -a --export 15CF4D18AF4F7421 | sudo apt-key add -
++            LLVM_KEY=15CF4D18AF4F7421
++            gpg --keyserver ipv4.pool.sks-keyservers.net --recv-key $LLVM_KEY || gpg --keyserver ha.pool.sks-keyservers.net --recv-key $LLVM_KEY
++            gpg -a --export $LLVM_KEY | sudo apt-key add -
              sudo add-apt-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main"
            fi
            sudo apt-get -y update
