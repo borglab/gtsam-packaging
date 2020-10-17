@@ -225,69 +225,69 @@ accomplish this:
 
 1) Set some variables:
 
-    version=4.0.3  # the gtsam version you want to release
-    commit=${version} # or set to the specific commit tag
-    # this should be the gpg key deposited with ubuntu launchpad
-    gpg_key=95C3A575ABC855CE7D271B2A5C288700CB82A210
-    # does this have to match the email used for ubuntu launchpad?
-    export DEBEMAIL="Borglab Builder <borglab.launchpad@gmail.com>
-    ppa="ppa:my-launchpad-login/my-ppa-name"
+        version=4.0.3  # the gtsam version you want to release
+        commit=${version} # or set to the specific commit tag
+        # this should be the gpg key deposited with ubuntu launchpad
+        gpg_key=95C3A575ABC855CE7D271B2A5C288700CB82A210
+        # does this have to match the email used for ubuntu launchpad?
+        export DEBEMAIL="Borglab Builder <borglab.launchpad@gmail.com>
+        ppa="ppa:my-launchpad-login/my-ppa-name"
 
 2) Perform these step by step:
 
-    git clone https://github.com/borglab-launchpad/gtsam-packaging.git
-    cd gtsam-packaging
-    git remote add gtsam https://github.com/borglab/gtsam.git
-    git fetch --all --tag
-    # create new packaging branch corresponding to version
-    debian_branch=ubuntu/release/${version}
-    git checkout -b ${debian_branch} ${version}
-    # create pristine tarball and commit
-    git archive --format=tar ${commit} -o ../gtsam_${version}.orig.tar
-    gzip ../gtsam_${version}.orig.tar
-    gbp pristine-tar --upstream-tag=${commit} ../gtsam_${version}.orig.tar.gz
+        git clone https://github.com/borglab-launchpad/gtsam-packaging.git
+        cd gtsam-packaging
+        git remote add gtsam https://github.com/borglab/gtsam.git
+        git fetch --all --tag
+        # create new packaging branch corresponding to version
+        debian_branch=ubuntu/release/${version}
+        git checkout -b ${debian_branch} ${version}
+        # create pristine tarball and commit
+        git archive --format=tar ${commit} -o ../gtsam_${version}.orig.tar
+        gzip ../gtsam_${version}.orig.tar
+        gbp pristine-tar --upstream-tag=${commit} ../gtsam_${version}.orig.tar.gz
 
 3) Copy the debian directory into place and make any other changes to the source
    files as necessary.
 
-    cp -rp <path_to_debian_directory>/debian .
+        cp -rp <path_to_debian_directory>/debian .
 
 4) The following steps need to be repeated for every distro (bionic, focal, etc...):
 
    - set the distro to whatever you want to build (xenial,bionic,focal)
 
-        distro=focal  # or whatever ubuntu version you want to use
+            distro=focal  # or whatever ubuntu version you want to use
 
    - update the changelog. When the editor comes up, you must edit the version
      number such that it is lexicographically larger than the previous one you used
 
-        gbp dch --debian-branch=${debian_branch} --upstream-tag=${commit} --release --distribution=${distro} --git-author
+            gbp dch --debian-branch=${debian_branch} --upstream-tag=${commit} --release --distribution=${distro} --git-author
 
    - store any changes you made to the pristine tar file in patches. If you
      made no changes, you should see output saying that there are no
      local changes to record.
 
-        dpkg-source --commit . ${version}.patch
+            dpkg-source --commit . ${version}.patch
 
    - finish up and upload to ppa:
 
-        # commit your changes (e.g. adding debian tree)
-        git commit -a -m "added debian directory for initial release"
+            # commit your changes (e.g. adding debian tree)
+            git commit -a -m "added debian directory for initial release"
 
-        # build the source package:
-        gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${debian_branch}
+            # build the source package:
+            gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${debian_branch}
 
-        # the following magic line should yield e.g. "4.0.3-1ubuntu1"
-        full_version=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
+            # the following magic line should yield e.g. "4.0.3-1ubuntu1"
+            full_version=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
 
-        # upload to ppa
-        pushd ..; rm -f *.upload; dput $ppa gtsam_${full_version}_source.changes ; popd
+            # upload to ppa
+            pushd ..; rm -f *.upload; dput $ppa gtsam_${full_version}_source.changes ; popd
 
 5) Finally push the changes made to a new branch, and push the changes made to the
    pristine-tar branch:
 
-    git push -u origin ubuntu/release/${version}
-    git push origin pristine-tar
+        git push -u origin ubuntu/release/${version}
+        git push origin pristine-tar
 
 ### How to modify the debian files for nightly snapshot and existing releases
 
@@ -301,6 +301,6 @@ That's pretty straight forward:
     git commit -a -m "changed debian files"
     git push origin $branch
 
-In case you have modified an existing release, it will not be built automatically
+In case you have modified an existing release it will not be built automatically
 by a nightly script, so you need to rerun steps 4) and 5) of the section on
 "How to create a new GTSAM release".
