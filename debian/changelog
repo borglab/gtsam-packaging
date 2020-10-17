@@ -1,6 +1,6 @@
-gtsam (4.0.3-1ubuntu2) bionic; urgency=medium
+gtsam (4.0.3-1ubuntu3) xenial; urgency=medium
 
   [ Jose Luis Blanco Claraco ]
   * First Debian release.
 
- -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sat, 17 Oct 2020 08:57:19 -0400
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sat, 17 Oct 2020 09:07:29 -0400
