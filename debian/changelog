@@ -1,5 +1,6 @@
-gtsam (4.0.3-1ubuntu1) focal; urgency=medium
+gtsam (4.0.3-1ubuntu2) bionic; urgency=medium
 
+  [ Jose Luis Blanco Claraco ]
   * First Debian release.
 
- -- Jose Luis Blanco Claraco <joseluisblancoc@gmail.com>  Sun, 4 Oct 2020 08:50:00 +0200
+ -- Bernd Pfrommer <bernd.pfrommer@gmail.com>  Sat, 17 Oct 2020 08:57:19 -0400
