@@ -1,0 +1,5 @@
+gtsam (4.0.3-1ubuntu1) focal; urgency=medium
+
+  * First Debian release.
+
+ -- Jose Luis Blanco Claraco <joseluisblancoc@gmail.com>  Sun, 4 Oct 2020 08:50:00 +0200
