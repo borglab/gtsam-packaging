@@ -241,16 +241,16 @@ accomplish this:
         git fetch --all --tag
         # create new packaging branch corresponding to version
         debian_branch=ubuntu/release/${version}
-        git checkout -b ${debian_branch} ${version}
+        git checkout -b ${debian_branch} ${commit}
         # create pristine tarball and commit
         git archive --format=tar ${commit} -o ../gtsam_${version}.orig.tar
         gzip ../gtsam_${version}.orig.tar
-        gbp pristine-tar --upstream-tag=${commit} ../gtsam_${version}.orig.tar.gz
 
 3) Copy the debian directory into place and make any other changes to the source
-   files as necessary.
+   files as necessary, then commit the pristine tarball:
 
         cp -rp <path_to_debian_directory>/debian .
+        gbp pristine-tar --upstream-tag=${commit} commit ../gtsam_${version}.orig.tar.gz
 
 4) The following steps need to be repeated for every distro (bionic, focal, etc...):
 
@@ -276,6 +276,9 @@ accomplish this:
 
             # build the source package:
             gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${debian_branch}
+            # at this point you can build the binary package like this
+			# (-b = binary, -us = don't sign source, -uc don't sign changes file)
+            # debuild -b -us -uc
 
             # the following magic line should yield e.g. "4.0.3-1ubuntu1"
             full_version=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
