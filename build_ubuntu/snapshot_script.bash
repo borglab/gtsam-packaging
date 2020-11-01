@@ -138,8 +138,8 @@ git rm -r debian/patches/*
 EDITOR=/bin/true dpkg-source --commit . ${snap}.patch
 rm -rf .pc # remove this automatically created directory to avoid error
 
-# commit updated changelog and patch file
-git add debian/changelog debian/patches
+# commit updated changelog, patch, and binary files
+git add debian/changelog debian/patches debian/source/include-binaries
 git commit -a -m "updated changelog and patch files for snapshot $snap"
 
 #
