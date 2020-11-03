@@ -307,3 +307,22 @@ That's pretty straight forward:
 In case you have modified an existing release it will not be built automatically
 by a nightly script, so you need to rerun steps 4) and 5) of the section on
 "How to create a new GTSAM release".
+
+### How to modify the docker image
+
+The nightly build is performed in a docker container. The
+corresponding docker file is built from the Dockerfile in the
+``build_ubuntu`` directory.
+
+The docker image to use is specified in ``.github/workflows/main.yml``:
+
+    image: berndpfrommer/gtsam-u20.04:1
+
+Set this to the the name of the docker image you want to use. To modify the
+docker image, edit the ``Dockerfile`` and build/push it:
+
+    cd build_ubuntu
+	# edit Dockerfile to your liking, and change below line to match
+	docker build -t your_dockerhub_name/gtsam-u20.04 .
+    docker push your_dockerhub_name/gtsam-u20.04
+
