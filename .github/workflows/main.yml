@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       # note: the git version on u18.04 is too old for the checkout action! 
-      image: berndpfrommer/gtsam-u20.04:1
+      image: berndpfrommer/gtsam-u20.04:latest
     name: build gtsam ubuntu source package
     steps:
       # To use this repository's private action 

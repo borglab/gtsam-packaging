@@ -316,7 +316,7 @@ corresponding docker file is built from the Dockerfile in the
 
 The docker image to use is specified in ``.github/workflows/main.yml``:
 
-    image: berndpfrommer/gtsam-u20.04:1
+    image: berndpfrommer/gtsam-u20.04:latest
 
 Set this to the the name of the docker image you want to use. To modify the
 docker image, edit the ``Dockerfile`` and build/push it:
