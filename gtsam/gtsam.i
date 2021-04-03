@@ -5,117 +5,7 @@
  * These are the current classes available through the matlab and python wrappers,
  * add more functions/classes as they are available.
  *
- * IMPORTANT: the python wrapper supports keyword arguments for functions/methods. Hence, the
- *            argument names matter. An implementation restriction is that in overloaded methods
- *            or functions, arguments of different types *have* to have different names.
- *
- * Requirements:
- *   Classes must start with an uppercase letter
- *      - Can wrap a typedef
- *   Only one Method/Constructor per line, though methods/constructors can extend across multiple lines
- *   Methods can return
- *     - Eigen types:       Matrix, Vector
- *     - C/C++ basic types: string, bool, size_t, int, double, char, unsigned char
- *     - void
- *     - Any class with which be copied with boost::make_shared()
- *     - boost::shared_ptr of any object type
- *   Constructors
- *     - Overloads are supported, but arguments of different types *have* to have different names
- *     - A class with no constructors can be returned from other functions but not allocated directly in MATLAB
- *   Methods
- *     - Constness has no effect
- *     - Specify by-value (not reference) return types, even if C++ method returns reference
- *     - Must start with a letter (upper or lowercase)
- *     - Overloads are supported
- *   Static methods
- *     - Must start with a letter (upper or lowercase) and use the "static" keyword
- *     - The first letter will be made uppercase in the generated MATLAB interface
- *     - Overloads are supported, but arguments of different types *have* to have different names
- *   Arguments to functions any of
- *      - Eigen types:       Matrix, Vector
- *      - Eigen types and classes as an optionally const reference
- *     - C/C++ basic types: string, bool, size_t, size_t, double, char, unsigned char
- *     - Any class with which be copied with boost::make_shared() (except Eigen)
- *     - boost::shared_ptr of any object type (except Eigen)
- *   Comments can use either C++ or C style, with multiple lines
- *   Namespace definitions
- *     - Names of namespaces must start with a lowercase letter
- *      - start a namespace with "namespace {"
- *      - end a namespace with exactly "}"
- *      - Namespaces can be nested
- *   Namespace usage
- *      - Namespaces can be specified for classes in arguments and return values
- *      - In each case, the namespace must be fully specified, e.g., "namespace1::namespace2::ClassName"
- *   Includes in C++ wrappers
- *     - All includes will be collected and added in a single file
- *     - All namespaces must have angle brackets: <path>
- *     - No default includes will be added
- *   Global/Namespace functions
- *     - Functions specified outside of a class are global
- *     - Can be overloaded with different arguments
- *     - Can have multiple functions of the same name in different namespaces
- *   Using classes defined in other modules
- *     - If you are using a class 'OtherClass' not wrapped in this definition file, add "class OtherClass;" to avoid a dependency error
- *   Virtual inheritance
- *     - Specify fully-qualified base classes, i.e. "virtual class Derived : ns::Base {" where "ns" is the namespace
- *     - Mark with 'virtual' keyword, e.g. "virtual class Base {", and also "virtual class Derived : ns::Base {"
- *     - Forward declarations must also be marked virtual, e.g. "virtual class ns::Base;" and
- *       also "virtual class ns::Derived;"
- *     - Pure virtual (abstract) classes should list no constructors in this interface file
- *     - Virtual classes must have a clone() function in C++ (though it does not have to be included
- *       in the MATLAB interface).  clone() will be called whenever an object copy is needed, instead
- *       of using the copy constructor (which is used for non-virtual objects).
- *     - Signature of clone function - will be called virtually, so must appear at least at the top of the inheritance tree
- *           virtual boost::shared_ptr<CLASS_NAME> clone() const;
- *   Class Templates
- *     - Basic templates are supported either with an explicit list of types to instantiate,
- *       e.g. template<T = {gtsam::Pose2, gtsam::Rot2, gtsam::Point3}> class Class1 { ... };
- *       or with typedefs, e.g.
- *       template<T, U> class Class2 { ... };
- *       typedef Class2<Type1, Type2> MyInstantiatedClass;
- *     - In the class definition, appearances of the template argument(s) will be replaced with their
- *       instantiated types, e.g. 'void setValue(const T& value);'.
- *     - To refer to the instantiation of the template class itself, use 'This', i.e. 'static This Create();'
- *     - To create new instantiations in other modules, you must copy-and-paste the whole class definition
- *       into the new module, but use only your new instantiation types.
- *     - When forward-declaring template instantiations, use the generated/typedefed name, e.g.
- *       class gtsam::Class1Pose2;
- *       class gtsam::MyInstantiatedClass;
- *   Boost.serialization within Matlab:
- *     - you need to mark classes as being serializable in the markup file (see this file for an example).
- *     - There are two options currently, depending on the class.  To "mark" a class as serializable,
- *       add a function with a particular signature so that wrap will catch it.
- *        - Add "void serialize()" to a class to create serialization functions for a class.
- *          Adding this flag subsumes the serializable() flag below. Requirements:
- *             - A default constructor must be publicly accessible
- *             - Must not be an abstract base class
- *             - The class must have an actual boost.serialization serialize() function.
- *        - Add "void serializable()" to a class if you only want the class to be serialized as a
- *          part of a container (such as noisemodel). This version does not require a publicly
- *          accessible default constructor.
- *   Forward declarations and class definitions for Pybind:
- *     - Need to specify the base class (both this forward class and base class are declared in an external Pybind header)
- *       This is so Pybind can generate proper inheritance.
- *       Example when wrapping a gtsam-based project:
- *          // forward declarations
- *          virtual class gtsam::NonlinearFactor
- *          virtual class gtsam::NoiseModelFactor : gtsam::NonlinearFactor
- *          // class definition
- *          #include <MyFactor.h>
- *          virtual class MyFactor : gtsam::NoiseModelFactor {...};
- *    - *DO NOT* re-define overriden function already declared in the external (forward-declared) base class
- *        - This will cause an ambiguity problem in Pybind header file
- */
-
-/**
- * Status:
- *  - TODO: default values for arguments
- *    - WORKAROUND: make multiple versions of the same function for different configurations of default arguments
- *  - TODO: Handle gtsam::Rot3M conversions to quaternions
- *  - TODO: Parse return of const ref arguments
- *  - TODO: Parse std::string variants and convert directly to special string
- *  - TODO: Add enum support
- *  - TODO: Add generalized serialization support via boost.serialization with hooks to matlab save/load
+ * Please refer to the wrapping docs: https://github.com/borglab/wrap/blob/master/README.md
  */
 
 namespace gtsam {
@@ -144,6 +34,9 @@ class KeyList {
   void remove(size_t key);
 
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 // Actually a FastSet<Key>
@@ -169,6 +62,9 @@ class KeySet {
   bool count(size_t key) const; // returns true if value exists
 
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 // Actually a vector<Key>
@@ -190,6 +86,9 @@ class KeyVector {
   void push_back(size_t key) const;
 
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 // Actually a FastMap<Key,int>
@@ -329,7 +228,7 @@ virtual class Value {
 };
 
 #include <gtsam/base/GenericValue.h>
-template<T = {Vector, Matrix, gtsam::Point2, gtsam::Point3, gtsam::Rot2, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::StereoPoint2, gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler, gtsam::EssentialMatrix, gtsam::CalibratedCamera, gtsam::SimpleCamera, gtsam::imuBias::ConstantBias}>
+template<T = {Vector, Matrix, gtsam::Point2, gtsam::Point3, gtsam::Rot2, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::StereoPoint2, gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler, gtsam::EssentialMatrix, gtsam::CalibratedCamera, gtsam::imuBias::ConstantBias}>
 virtual class GenericValue : gtsam::Value {
   void serializable() const;
 };
@@ -361,10 +260,12 @@ class Point2 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 // std::vector<gtsam::Point2>
-#include <gtsam/geometry/Point2.h>
 class Point2Vector
 {
   // Constructors
@@ -406,6 +307,12 @@ class StereoPoint2 {
   gtsam::StereoPoint2 compose(const gtsam::StereoPoint2& p2) const;
   gtsam::StereoPoint2 between(const gtsam::StereoPoint2& p2) const;
 
+  // Operator Overloads
+  gtsam::StereoPoint2 operator-() const;
+  // gtsam::StereoPoint2 operator+(Vector b) const;  //TODO Mixed types not yet supported
+  gtsam::StereoPoint2 operator+(const gtsam::StereoPoint2& p2) const;
+  gtsam::StereoPoint2 operator-(const gtsam::StereoPoint2& p2) const;
+
   // Manifold
   gtsam::StereoPoint2 retract(Vector v) const;
   Vector localCoordinates(const gtsam::StereoPoint2& p) const;
@@ -422,6 +329,9 @@ class StereoPoint2 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Point3.h>
@@ -446,6 +356,17 @@ class Point3 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
+};
+
+class Point3Pairs {
+  Point3Pairs();
+  size_t size() const;
+  bool empty() const;
+  gtsam::Point3Pair at(size_t n) const;
+  void push_back(const gtsam::Point3Pair& point_pair);
 };
 
 #include <gtsam/geometry/Rot2.h>
@@ -466,6 +387,9 @@ class Rot2 {
   gtsam::Rot2 inverse();
   gtsam::Rot2 compose(const gtsam::Rot2& p2) const;
   gtsam::Rot2 between(const gtsam::Rot2& p2) const;
+
+  // Operator Overloads
+  gtsam::Rot2 operator*(const gtsam::Rot2& p2) const;
 
   // Manifold
   gtsam::Rot2 retract(Vector v) const;
@@ -491,6 +415,9 @@ class Rot2 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/SO3.h>
@@ -511,6 +438,9 @@ class SO3 {
   gtsam::SO3 inverse() const;
   gtsam::SO3 between(const gtsam::SO3& R) const;
   gtsam::SO3 compose(const gtsam::SO3& R) const;
+
+  // Operator Overloads
+  gtsam::SO3 operator*(const gtsam::SO3& R) const;
 
   // Manifold
   gtsam::SO3 retract(Vector v) const;
@@ -539,6 +469,9 @@ class SO4 {
   gtsam::SO4 between(const gtsam::SO4& Q) const;
   gtsam::SO4 compose(const gtsam::SO4& Q) const;
 
+  // Operator Overloads
+  gtsam::SO4 operator*(const gtsam::SO4& Q) const;
+
   // Manifold
   gtsam::SO4 retract(Vector v) const;
   Vector localCoordinates(const gtsam::SO4& Q) const;
@@ -565,6 +498,9 @@ class SOn {
   gtsam::SOn inverse() const;
   gtsam::SOn between(const gtsam::SOn& Q) const;
   gtsam::SOn compose(const gtsam::SOn& Q) const;
+
+  // Operator Overloads
+  gtsam::SOn operator*(const gtsam::SOn& Q) const;
 
   // Manifold
   gtsam::SOn retract(Vector v) const;
@@ -597,6 +533,7 @@ class Rot3 {
   Rot3(double R11, double R12, double R13,
       double R21, double R22, double R23,
       double R31, double R32, double R33);
+  Rot3(double w, double x, double y, double z);
 
   static gtsam::Rot3 Rx(double t);
   static gtsam::Rot3 Ry(double t);
@@ -622,6 +559,9 @@ class Rot3 {
     gtsam::Rot3 inverse() const;
   gtsam::Rot3 compose(const gtsam::Rot3& p2) const;
   gtsam::Rot3 between(const gtsam::Rot3& p2) const;
+
+  // Operator Overloads
+  gtsam::Rot3 operator*(const gtsam::Rot3& p2) const;
 
   // Manifold
   //gtsam::Rot3 retractCayley(Vector v) const; // TODO, does not exist in both Matrix and Quaternion options
@@ -652,6 +592,9 @@ class Rot3 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Pose2.h>
@@ -673,6 +616,9 @@ class Pose2 {
   gtsam::Pose2 inverse() const;
   gtsam::Pose2 compose(const gtsam::Pose2& p2) const;
   gtsam::Pose2 between(const gtsam::Pose2& p2) const;
+
+  // Operator Overloads
+  gtsam::Pose2 operator*(const gtsam::Pose2& p2) const;
 
   // Manifold
   gtsam::Pose2 retract(Vector v) const;
@@ -707,6 +653,9 @@ class Pose2 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Pose3.h>
@@ -727,6 +676,9 @@ class Pose3 {
   gtsam::Pose3 inverse() const;
   gtsam::Pose3 compose(const gtsam::Pose3& pose) const;
   gtsam::Pose3 between(const gtsam::Pose3& pose) const;
+
+  // Operator Overloads
+  gtsam::Pose3 operator*(const gtsam::Pose3& pose) const;
 
   // Manifold
   gtsam::Pose3 retract(Vector v) const;
@@ -763,10 +715,19 @@ class Pose3 {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
-// std::vector<gtsam::Pose3>
-#include <gtsam/geometry/Pose3.h>
+class Pose3Pairs {
+  Pose3Pairs();
+  size_t size() const;
+  bool empty() const;
+  gtsam::Pose3Pair at(size_t n) const;
+  void push_back(const gtsam::Pose3Pair& pose_pair);
+};
+
 class Pose3Vector
 {
   Pose3Vector();
@@ -796,6 +757,15 @@ class Unit3 {
   size_t dim() const;
   gtsam::Unit3 retract(Vector v) const;
   Vector localCoordinates(const gtsam::Unit3& s) const;
+
+  // enabling serialization functionality
+  void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
+
+  // enabling function to compare objects
+  bool equals(const gtsam::Unit3& expected, double tol) const;
 };
 
 #include <gtsam/geometry/EssentialMatrix.h>
@@ -851,11 +821,13 @@ class Cal3_S2 {
   gtsam::Point2 principalPoint() const;
   Vector vector() const;
   Matrix K() const;
-  Matrix matrix() const;
-  Matrix matrix_inverse() const;
+  Matrix inverse() const;
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Cal3DS2_Base.h>
@@ -880,10 +852,13 @@ virtual class Cal3DS2_Base {
 
   // Action on Point2
   gtsam::Point2 uncalibrate(const gtsam::Point2& p) const;
-  gtsam::Point2 calibrate(const gtsam::Point2& p, double tol) const;
+  gtsam::Point2 calibrate(const gtsam::Point2& p) const;
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Cal3DS2.h>
@@ -905,6 +880,9 @@ virtual class Cal3DS2 : gtsam::Cal3DS2_Base {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Cal3Unified.h>
@@ -931,6 +909,9 @@ virtual class Cal3Unified : gtsam::Cal3DS2_Base {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/Cal3_S2Stereo.h>
@@ -980,14 +961,17 @@ class Cal3Bundler {
   double fy() const;
   double k1() const;
   double k2() const;
-  double u0() const;
-  double v0() const;
+  double px() const;
+  double py() const;
   Vector vector() const;
   Vector k() const;
   Matrix K() const;
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/CalibratedCamera.h>
@@ -1014,10 +998,15 @@ class CalibratedCamera {
 
   // Standard Interface
   gtsam::Pose3 pose() const;
-  double range(const gtsam::Point3& p) const; // TODO: Other overloaded range methods
+  double range(const gtsam::Point3& point) const;
+  double range(const gtsam::Pose3& pose) const;
+  double range(const gtsam::CalibratedCamera& camera) const;
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/PinholeCamera.h>
@@ -1056,57 +1045,50 @@ class PinholeCamera {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
-#include <gtsam/geometry/SimpleCamera.h>
-virtual class SimpleCamera {
-  // Standard Constructors and Named Constructors
-  SimpleCamera();
-  SimpleCamera(const gtsam::Pose3& pose);
-  SimpleCamera(const gtsam::Pose3& pose, const gtsam::Cal3_S2& K);
-  static gtsam::SimpleCamera Level(const gtsam::Cal3_S2& K, const gtsam::Pose2& pose, double height);
-  static gtsam::SimpleCamera Level(const gtsam::Pose2& pose, double height);
-  static gtsam::SimpleCamera Lookat(const gtsam::Point3& eye, const gtsam::Point3& target,
-      const gtsam::Point3& upVector, const gtsam::Cal3_S2& K);
-  static gtsam::SimpleCamera Lookat(const gtsam::Point3& eye, const gtsam::Point3& target,
-      const gtsam::Point3& upVector);
 
-  // Testable
-  void print(string s) const;
-  bool equals(const gtsam::SimpleCamera& camera, double tol) const;
+#include <gtsam/geometry/Similarity3.h>
+class Similarity3 {
+  // Standard Constructors
+  Similarity3();
+  Similarity3(double s);
+  Similarity3(const gtsam::Rot3& R, const gtsam::Point3& t, double s);
+  Similarity3(const Matrix& R, const Vector& t, double s);
+  Similarity3(const Matrix& T);
+
+  gtsam::Pose3 transformFrom(const gtsam::Pose3& T);
+  static gtsam::Similarity3 Align(const gtsam::Point3Pairs & abPointPairs);
+  static gtsam::Similarity3 Align(const gtsam::Pose3Pairs & abPosePairs);
 
   // Standard Interface
-  gtsam::Pose3 pose() const;
-  gtsam::Cal3_S2 calibration() const;
-
-  // Manifold
-  gtsam::SimpleCamera retract(Vector d) const;
-  Vector localCoordinates(const gtsam::SimpleCamera& T2) const;
-  size_t dim() const;
-  static size_t Dim();
-
-  // Transformations and measurement functions
-  static gtsam::Point2 Project(const gtsam::Point3& cameraPoint);
-  pair<gtsam::Point2,bool> projectSafe(const gtsam::Point3& pw) const;
-  gtsam::Point2 project(const gtsam::Point3& point);
-  gtsam::Point3 backproject(const gtsam::Point2& p, double depth) const;
-  double range(const gtsam::Point3& point);
-  double range(const gtsam::Pose3& pose);
-
-  // enabling serialization functionality
-  void serialize() const;
-
+  const Matrix matrix() const;
+  const gtsam::Rot3& rotation();
+  const gtsam::Point3& translation();
+  double scale() const;
 };
 
-gtsam::SimpleCamera simpleCamera(const Matrix& P);
 
+// Forward declaration of PinholeCameraCalX is defined here.
+#include <gtsam/geometry/SimpleCamera.h>
 // Some typedefs for common camera types
 // PinholeCameraCal3_S2 is the same as SimpleCamera above
 typedef gtsam::PinholeCamera<gtsam::Cal3_S2> PinholeCameraCal3_S2;
-//TODO (Issue 237) due to lack of jacobians of Cal3DS2_Base::calibrate, PinholeCamera does not apply to Cal3DS2/Unified
-//typedef gtsam::PinholeCamera<gtsam::Cal3DS2> PinholeCameraCal3DS2;
-//typedef gtsam::PinholeCamera<gtsam::Cal3Unified> PinholeCameraCal3Unified;
+typedef gtsam::PinholeCamera<gtsam::Cal3DS2> PinholeCameraCal3DS2;
+typedef gtsam::PinholeCamera<gtsam::Cal3Unified> PinholeCameraCal3Unified;
 typedef gtsam::PinholeCamera<gtsam::Cal3Bundler> PinholeCameraCal3Bundler;
+
+template<T>
+class CameraSet {
+  CameraSet();
+
+  // structure specific methods
+  T at(size_t i) const;
+  void push_back(const T& cam);
+};
 
 #include <gtsam/geometry/StereoCamera.h>
 class StereoCamera {
@@ -1135,11 +1117,14 @@ class StereoCamera {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/geometry/triangulation.h>
 
-// Templates appear not yet supported for free functions
+// Templates appear not yet supported for free functions - issue raised at borglab/wrap#14 to add support
 gtsam::Point3 triangulatePoint3(const gtsam::Pose3Vector& poses,
     gtsam::Cal3_S2* sharedCal, const gtsam::Point2Vector& measurements,
     double rank_tol, bool optimize);
@@ -1149,7 +1134,13 @@ gtsam::Point3 triangulatePoint3(const gtsam::Pose3Vector& poses,
 gtsam::Point3 triangulatePoint3(const gtsam::Pose3Vector& poses,
     gtsam::Cal3Bundler* sharedCal, const gtsam::Point2Vector& measurements,
     double rank_tol, bool optimize);
-
+gtsam::Point3 triangulatePoint3(const gtsam::CameraSetCal3_S2& cameras,
+    const gtsam::Point2Vector& measurements, double rank_tol,
+    bool optimize);
+gtsam::Point3 triangulatePoint3(const gtsam::CameraSetCal3Bundler& cameras,
+    const gtsam::Point2Vector& measurements, double rank_tol,
+    bool optimize);
+    
 //*************************************************************************
 // Symbolic
 //*************************************************************************
@@ -1283,9 +1274,9 @@ class SymbolicBayesTree {
 };
 
 // class SymbolicBayesTreeClique {
-//   BayesTreeClique();
-//   BayesTreeClique(CONDITIONAL* conditional);
-// //  BayesTreeClique(const pair<typename ConditionalType::shared_ptr, typename ConditionalType::FactorType::shared_ptr>& result) : Base(result) {}
+//   SymbolicBayesTreeClique();
+//   SymbolicBayesTreeClique(CONDITIONAL* conditional);
+//   SymbolicBayesTreeClique(const pair<typename ConditionalType::shared_ptr, typename ConditionalType::FactorType::shared_ptr>& result) : Base(result) {}
 //
 //   bool equals(const This& other, double tol) const;
 //   void print(string s) const;
@@ -1296,13 +1287,13 @@ class SymbolicBayesTree {
 //   CONDITIONAL* conditional() const;
 //   bool isRoot() const;
 //   size_t treeSize() const;
-// //  const std::list<derived_ptr>& children() const { return children_; }
-// //  derived_ptr parent() const { return parent_.lock(); }
+//  const std::list<derived_ptr>& children() const { return children_; }
+//  derived_ptr parent() const { return parent_.lock(); }
 //
 //   // TODO: need wrapped versions graphs, BayesNet
-// //  BayesNet<ConditionalType> shortcut(derived_ptr root, Eliminate function) const;
-// //  FactorGraph<FactorType> marginal(derived_ptr root, Eliminate function) const;
-// //  FactorGraph<FactorType> joint(derived_ptr C2, derived_ptr root, Eliminate function) const;
+//  BayesNet<ConditionalType> shortcut(derived_ptr root, Eliminate function) const;
+//  FactorGraph<FactorType> marginal(derived_ptr root, Eliminate function) const;
+//  FactorGraph<FactorType> joint(derived_ptr C2, derived_ptr root, Eliminate function) const;
 //
 //   void deleteCachedShortcuts();
 // };
@@ -1583,6 +1574,9 @@ class VectorValues {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/linear/GaussianFactor.h>
@@ -1644,6 +1638,9 @@ virtual class JacobianFactor : gtsam::GaussianFactor {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/linear/HessianFactor.h>
@@ -1675,6 +1672,9 @@ virtual class HessianFactor : gtsam::GaussianFactor {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/linear/GaussianFactorGraph.h>
@@ -1754,10 +1754,13 @@ class GaussianFactorGraph {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/linear/GaussianConditional.h>
-virtual class GaussianConditional : gtsam::GaussianFactor {
+virtual class GaussianConditional : gtsam::JacobianFactor {
   //Constructors
   GaussianConditional(size_t key, Vector d, Matrix R, const gtsam::noiseModel::Diagonal* sigmas);
   GaussianConditional(size_t key, Vector d, Matrix R, size_t name1, Matrix S,
@@ -1816,6 +1819,8 @@ virtual class GaussianBayesNet {
   gtsam::GaussianConditional* at(size_t idx) const;
   gtsam::KeySet keys() const;
   bool exists(size_t idx) const;
+
+  void saveGraph(const string& s) const;
 
   gtsam::GaussianConditional* front() const;
   gtsam::GaussianConditional* back() const;
@@ -1962,6 +1967,21 @@ class KalmanFilter {
 //*************************************************************************
 
 #include <gtsam/inference/Symbol.h>
+
+class Symbol {
+  Symbol();
+  Symbol(char c, uint64_t j);
+  Symbol(size_t key);
+
+  size_t key() const;
+  void print(const string& s) const;
+  bool equals(const gtsam::Symbol& expected, double tol) const;
+
+  char chr() const;
+  uint64_t index() const;
+  string string() const;
+};
+
 size_t symbol(char chr, size_t index);
 char symbolChr(size_t key);
 size_t symbolIndex(size_t key);
@@ -2044,6 +2064,9 @@ class Ordering {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
@@ -2068,7 +2091,7 @@ class NonlinearFactorGraph {
   gtsam::KeySet keys() const;
   gtsam::KeyVector keyVector() const;
 
-  template<T = {Vector, gtsam::Point2, gtsam::StereoPoint2, gtsam::Point3, gtsam::Rot2, gtsam::SO3, gtsam::SO4, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::Cal3_S2,gtsam::CalibratedCamera, gtsam::SimpleCamera, gtsam::PinholeCameraCal3_S2, gtsam::imuBias::ConstantBias}>
+  template<T = {Vector, gtsam::Point2, gtsam::StereoPoint2, gtsam::Point3, gtsam::Rot2, gtsam::SO3, gtsam::SO4, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::Cal3_S2,gtsam::CalibratedCamera, gtsam::PinholeCameraCal3_S2, gtsam::PinholeCamera<gtsam::Cal3Bundler>, gtsam::imuBias::ConstantBias}>
   void addPrior(size_t key, const T& prior, const gtsam::noiseModel::Base* noiseModel);
 
   // NonlinearFactorGraph
@@ -2082,6 +2105,11 @@ class NonlinearFactorGraph {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
+
+  void saveGraph(const string& s) const;
 };
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
@@ -2138,6 +2166,9 @@ class Values {
   // enabling serialization functionality
   void serialize() const;
 
+  // enable pickling in python
+  void pickle() const;
+
   // New in 4.0, we have to specialize every insert/update/at to generate wrappers
   // Instead of the old:
   // void insert(size_t j, const gtsam::Value& value);
@@ -2157,12 +2188,13 @@ class Values {
   void insert(size_t j, const gtsam::SOn& P);
   void insert(size_t j, const gtsam::Rot3& rot3);
   void insert(size_t j, const gtsam::Pose3& pose3);
+  void insert(size_t j, const gtsam::Unit3& unit3);
   void insert(size_t j, const gtsam::Cal3_S2& cal3_s2);
   void insert(size_t j, const gtsam::Cal3DS2& cal3ds2);
   void insert(size_t j, const gtsam::Cal3Bundler& cal3bundler);
   void insert(size_t j, const gtsam::EssentialMatrix& essential_matrix);
   void insert(size_t j, const gtsam::PinholeCameraCal3_S2& simple_camera);
-  // void insert(size_t j, const gtsam::PinholeCameraCal3Bundler& camera);
+  void insert(size_t j, const gtsam::PinholeCamera<gtsam::Cal3Bundler>& camera);
   void insert(size_t j, const gtsam::imuBias::ConstantBias& constant_bias);
   void insert(size_t j, const gtsam::NavState& nav_state);
 
@@ -2175,18 +2207,19 @@ class Values {
   void update(size_t j, const gtsam::SOn& P);
   void update(size_t j, const gtsam::Rot3& rot3);
   void update(size_t j, const gtsam::Pose3& pose3);
+  void update(size_t j, const gtsam::Unit3& unit3);
   void update(size_t j, const gtsam::Cal3_S2& cal3_s2);
   void update(size_t j, const gtsam::Cal3DS2& cal3ds2);
   void update(size_t j, const gtsam::Cal3Bundler& cal3bundler);
   void update(size_t j, const gtsam::EssentialMatrix& essential_matrix);
   void update(size_t j, const gtsam::PinholeCameraCal3_S2& simple_camera);
-  // void update(size_t j, const gtsam::PinholeCameraCal3Bundler& camera);
+  void update(size_t j, const gtsam::PinholeCamera<gtsam::Cal3Bundler>& camera);
   void update(size_t j, const gtsam::imuBias::ConstantBias& constant_bias);
   void update(size_t j, const gtsam::NavState& nav_state);
   void update(size_t j, Vector vector);
   void update(size_t j, Matrix matrix);
 
-  template<T = {gtsam::Point2, gtsam::Point3, gtsam::Rot2, gtsam::Pose2, gtsam::SO3, gtsam::SO4, gtsam::SOn, gtsam::Rot3, gtsam::Pose3, gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler, gtsam::EssentialMatrix, gtsam::PinholeCameraCal3_S2, gtsam::imuBias::ConstantBias, gtsam::NavState, Vector, Matrix}>
+  template<T = {gtsam::Point2, gtsam::Point3, gtsam::Rot2, gtsam::Pose2, gtsam::SO3, gtsam::SO4, gtsam::SOn, gtsam::Rot3, gtsam::Pose3, gtsam::Unit3, gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler, gtsam::EssentialMatrix, gtsam::PinholeCameraCal3_S2, gtsam::PinholeCamera<gtsam::Cal3Bundler>, gtsam::imuBias::ConstantBias, gtsam::NavState, Vector, Matrix}>
   T at(size_t j);
 
   /// version for double
@@ -2490,7 +2523,8 @@ class ISAM2 {
   template <VALUE = {gtsam::Point2, gtsam::Rot2, gtsam::Pose2, gtsam::Point3,
                      gtsam::Rot3, gtsam::Pose3, gtsam::Cal3_S2, gtsam::Cal3DS2,
                      gtsam::Cal3Bundler, gtsam::EssentialMatrix,
-                     gtsam::SimpleCamera, gtsam::PinholeCameraCal3_S2, Vector, Matrix}>
+                     gtsam::PinholeCameraCal3_S2, gtsam::PinholeCamera<gtsam::Cal3Bundler>, 
+                     Vector, Matrix}>
   VALUE calculateEstimate(size_t key) const;
   gtsam::Values calculateBestEstimate() const;
   Matrix marginalCovariance(size_t key) const;
@@ -2523,18 +2557,20 @@ class NonlinearISAM {
 //*************************************************************************
 // Nonlinear factor types
 //*************************************************************************
-#include <gtsam/geometry/SimpleCamera.h>
 #include <gtsam/geometry/CalibratedCamera.h>
 #include <gtsam/geometry/StereoPoint2.h>
 
 #include <gtsam/nonlinear/PriorFactor.h>
-template<T = {Vector, gtsam::Point2, gtsam::StereoPoint2, gtsam::Point3, gtsam::Rot2, gtsam::SO3, gtsam::SO4, gtsam::SOn, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::Cal3_S2,gtsam::CalibratedCamera, gtsam::SimpleCamera, gtsam::PinholeCameraCal3_S2, gtsam::imuBias::ConstantBias}>
+template<T = {Vector, gtsam::Point2, gtsam::StereoPoint2, gtsam::Point3, gtsam::Rot2, gtsam::SO3, gtsam::SO4, gtsam::SOn, gtsam::Rot3, gtsam::Pose2, gtsam::Pose3, gtsam::Unit3, gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler, gtsam::CalibratedCamera, gtsam::PinholeCameraCal3_S2, gtsam::imuBias::ConstantBias, gtsam::PinholeCamera<gtsam::Cal3Bundler>}>
 virtual class PriorFactor : gtsam::NoiseModelFactor {
   PriorFactor(size_t key, const T& prior, const gtsam::noiseModel::Base* noiseModel);
   T prior() const;
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 
@@ -2546,13 +2582,16 @@ virtual class BetweenFactor : gtsam::NoiseModelFactor {
 
   // enabling serialization functionality
   void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
 };
 
 #include <gtsam/nonlinear/NonlinearEquality.h>
 template <T = {gtsam::Point2, gtsam::StereoPoint2, gtsam::Point3, gtsam::Rot2,
                gtsam::SO3, gtsam::SO4, gtsam::SOn, gtsam::Rot3, gtsam::Pose2,
                gtsam::Pose3, gtsam::Cal3_S2, gtsam::CalibratedCamera,
-               gtsam::SimpleCamera, gtsam::PinholeCameraCal3_S2,
+               gtsam::PinholeCameraCal3_S2,
                gtsam::imuBias::ConstantBias}>
 virtual class NonlinearEquality : gtsam::NoiseModelFactor {
   // Constructor - forces exact evaluation
@@ -2607,6 +2646,7 @@ virtual class BearingFactor : gtsam::NoiseModelFactor {
 };
 
 typedef gtsam::BearingFactor<gtsam::Pose2, gtsam::Point2, gtsam::Rot2> BearingFactor2D;
+typedef gtsam::BearingFactor<gtsam::Pose3, gtsam::Point3, gtsam::Unit3> BearingFactor3D;
 typedef gtsam::BearingFactor<gtsam::Pose2, gtsam::Pose2, gtsam::Rot2> BearingFactorPose2;
 
 #include <gtsam/geometry/BearingRange.h>
@@ -2629,6 +2669,8 @@ virtual class BearingRangeFactor : gtsam::NoiseModelFactor {
   BearingRangeFactor(size_t poseKey, size_t pointKey,
       const BEARING& measuredBearing, const RANGE& measuredRange,
       const gtsam::noiseModel::Base* noiseModel);
+
+  gtsam::BearingRange<POSE, POINT, BEARING, RANGE> measured() const;
 
   // enabling serialization functionality
   void serialize() const;
@@ -2671,10 +2713,10 @@ virtual class GeneralSFMFactor : gtsam::NoiseModelFactor {
   gtsam::Point2 measured() const;
 };
 typedef gtsam::GeneralSFMFactor<gtsam::PinholeCameraCal3_S2, gtsam::Point3> GeneralSFMFactorCal3_S2;
-//TODO (Issue 237) due to lack of jacobians of Cal3DS2_Base::calibrate, GeneralSFMFactor does not apply to Cal3DS2
-//typedef gtsam::GeneralSFMFactor<gtsam::PinholeCameraCal3DS2, gtsam::Point3> GeneralSFMFactorCal3DS2;
+typedef gtsam::GeneralSFMFactor<gtsam::PinholeCameraCal3DS2, gtsam::Point3> GeneralSFMFactorCal3DS2;
+typedef gtsam::GeneralSFMFactor<gtsam::PinholeCamera<gtsam::Cal3Bundler>, gtsam::Point3> GeneralSFMFactorCal3Bundler;
 
-template<CALIBRATION = {gtsam::Cal3_S2}>
+template<CALIBRATION = {gtsam::Cal3_S2, gtsam::Cal3DS2, gtsam::Cal3Bundler}>
 virtual class GeneralSFMFactor2 : gtsam::NoiseModelFactor {
   GeneralSFMFactor2(const gtsam::Point2& measured, const gtsam::noiseModel::Base* model, size_t poseKey, size_t landmarkKey, size_t calibKey);
   gtsam::Point2 measured() const;
@@ -2715,7 +2757,7 @@ virtual class SmartProjectionPoseFactor: gtsam::NonlinearFactor {
   void add(const gtsam::Point2& measured_i, size_t poseKey_i);
 
   // enabling serialization functionality
-  //void serialize() const;
+  void serialize() const;
 };
 
 typedef gtsam::SmartProjectionPoseFactor<gtsam::Cal3_S2> SmartProjectionPose3Factor;
@@ -2759,21 +2801,54 @@ virtual class EssentialMatrixFactor : gtsam::NoiseModelFactor {
 };
 
 #include <gtsam/slam/dataset.h>
+
 class SfmTrack {
-  Point3 point3() const;
+  SfmTrack();
+  SfmTrack(const gtsam::Point3& pt);
+  const Point3& point3() const;
+
+  double r;
+  double g;
+  double b;
+
+  std::vector<pair<size_t, gtsam::Point2>> measurements;
+
   size_t number_measurements() const;
   pair<size_t, gtsam::Point2> measurement(size_t idx) const;
   pair<size_t, size_t> siftIndex(size_t idx) const;
+  void add_measurement(size_t idx, const gtsam::Point2& m);
+
+  // enabling serialization functionality
+  void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
+
+  // enabling function to compare objects
+  bool equals(const gtsam::SfmTrack& expected, double tol) const;
 };
 
 class SfmData {
+  SfmData();
   size_t number_cameras() const;
   size_t number_tracks() const;
   gtsam::PinholeCamera<gtsam::Cal3Bundler> camera(size_t idx) const;
   gtsam::SfmTrack track(size_t idx) const;
+  void add_track(const gtsam::SfmTrack& t) ;
+  void add_camera(const gtsam::SfmCamera& cam);
+
+  // enabling serialization functionality
+  void serialize() const;
+
+  // enable pickling in python
+  void pickle() const;
+
+  // enabling function to compare objects
+  bool equals(const gtsam::SfmData& expected, double tol) const;
 };
 
 gtsam::SfmData readBal(string filename);
+bool writeBAL(string filename, gtsam::SfmData& data);
 gtsam::Values initialCamerasEstimate(const gtsam::SfmData& db);
 gtsam::Values initialCamerasAndPointsEstimate(const gtsam::SfmData& db);
 
@@ -2913,9 +2988,14 @@ class ShonanAveragingParameters2 {
   void setAnchorWeight(double value);
   double getAnchorWeight() const;
   void setKarcherWeight(double value);
-  double getKarcherWeight();
+  double getKarcherWeight() const;
   void setGaugesWeight(double value);
-  double getGaugesWeight();
+  double getGaugesWeight() const;
+  void setUseHuber(bool value);
+  bool getUseHuber() const;
+  void setCertifyOptimality(bool value);
+  bool getCertifyOptimality() const;
+  void print() const;
 };
 
 class ShonanAveragingParameters3 {
@@ -2929,9 +3009,14 @@ class ShonanAveragingParameters3 {
   void setAnchorWeight(double value);
   double getAnchorWeight() const;
   void setKarcherWeight(double value);
-  double getKarcherWeight();
+  double getKarcherWeight() const;
   void setGaugesWeight(double value);
-  double getGaugesWeight();
+  double getGaugesWeight() const;
+  void setUseHuber(bool value);
+  bool getUseHuber() const;
+  void setCertifyOptimality(bool value);
+  bool getCertifyOptimality() const;
+  void print() const;
 };
 
 class ShonanAveraging2 {
@@ -2978,7 +3063,7 @@ class ShonanAveraging3 {
   ShonanAveraging3(string g2oFile);
   ShonanAveraging3(string g2oFile,
                    const gtsam::ShonanAveragingParameters3 &parameters);
-  
+
   // TODO(frank): deprecate once we land pybind wrapper
   ShonanAveraging3(const gtsam::BetweenFactorPose3s &factors);
   ShonanAveraging3(const gtsam::BetweenFactorPose3s &factors,
@@ -3070,6 +3155,11 @@ class ConstantBias {
   gtsam::imuBias::ConstantBias compose(const gtsam::imuBias::ConstantBias& b) const;
   gtsam::imuBias::ConstantBias between(const gtsam::imuBias::ConstantBias& b) const;
 
+  // Operator Overloads
+  gtsam::imuBias::ConstantBias operator-() const;
+  gtsam::imuBias::ConstantBias operator+(const gtsam::imuBias::ConstantBias& b) const;
+  gtsam::imuBias::ConstantBias operator-(const gtsam::imuBias::ConstantBias& b) const;
+
   // Manifold
   gtsam::imuBias::ConstantBias retract(Vector v) const;
   Vector localCoordinates(const gtsam::imuBias::ConstantBias& b) const;
@@ -3120,9 +3210,8 @@ virtual class PreintegratedRotationParams {
 
   Matrix getGyroscopeCovariance() const;
 
-  // TODO(frank): allow optional
-  //  boost::optional<Vector> getOmegaCoriolis() const;
-  //  boost::optional<Pose3>   getBodyPSensor()   const;
+  boost::optional<Vector> getOmegaCoriolis() const;
+  boost::optional<gtsam::Pose3> getBodyPSensor() const;
 };
 
 #include <gtsam/navigation/PreintegrationParams.h>
