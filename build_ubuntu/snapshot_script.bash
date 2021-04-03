@@ -135,7 +135,7 @@ snap=`head -1 debian/changelog | sed 's/.*[(]//g; s/[)].*//g'`
 git rm -r debian/patches/*
 # now build patch file for difference between pristine -> snapshot
 # (must disable editor to get away without commit message)
-EDITOR=/bin/true dpkg-source --commit . ${snap}.patch
+EDITOR=/bin/true dpkg-source --include-removal --commit . ${snap}.patch
 rm -rf .pc # remove this automatically created directory to avoid error
 
 # commit updated changelog, patch, and binary files
@@ -159,7 +159,7 @@ do
     git commit -m "modified changelog for distro $distro"
     # this will actually build the source package, i.e. create the
     # stuff that can be uploaded to ubuntu's ppa farm for building
-    gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${vendor}/snapshot
+    gbp buildpackage -k${gpg_key} -S -sa --git-debian-branch=${vendor}/snapshot --source-option="--include-removal"
 
     # upload to ubuntu ppa server for building
     pushd ..
