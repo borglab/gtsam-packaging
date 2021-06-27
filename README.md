@@ -322,7 +322,7 @@ Set this to the the name of the docker image you want to use. To modify the
 docker image, edit the ``Dockerfile`` and build/push it:
 
     cd build_ubuntu
-	# edit Dockerfile to your liking, and change below line to match
-	docker build -t your_dockerhub_name/gtsam-u20.04 .
+    # edit Dockerfile to your liking, and change below line to match
+    docker build -t your_dockerhub_name/gtsam-u20.04 .
     docker push your_dockerhub_name/gtsam-u20.04
 
