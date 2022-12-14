@@ -1,6 +1,17 @@
-# The GTSAM packaging repository
+# The (stale) GTSAM packaging repository
 
-This repo has instructions, scripts, packaging branches, and github
+
+**This repo is stale and was archived on Dec 14 2022**
+
+The active repository is here: https://github.com/borglab-launchpad/gtsam-packaging
+
+
+
+
+--
+
+
+This repo had instructions, scripts, packaging branches, and github
 workflow  files for automatic creation of Ubuntu/Debian source
 packages. These source packages are uploaded to a Ubuntu
 Personal Package Archive (PPA) from where they can be installed on any
